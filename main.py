@@ -38,28 +38,46 @@ if __name__ == '__main__':
     logMVG = MVGClassifier(DTR, LTR)
     logNaiveMVG = NaiveMVGClassifier(DTR, LTR)
     logTiedMVG = TiedMVGClassifier(DTR, LTR)
+    logReg = LogRegClass(DTR, LTR, 0.00001)
+
     workPoint = util.WorkPoint(0.5, 1, 10)
 
+    print("----- MVG -----")
     logMVG.train()
     P = logMVG.classify(DTE)
     SPost = P.argmax(axis=0)
-    error = (SPost != LTE).sum() / LTE.shape[0] * 100
-    print(error)
+    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
+
+    print("----- Naive MVG -----")
     logNaiveMVG.train()
     P = logNaiveMVG.classify(DTE)
     SPost = P.argmax(axis=0)
-    error = (SPost != LTE).sum() / LTE.shape[0] * 100
-    print(error)
+    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
+    print("----- NaiveMVG with PCA -----")
+    D = util.PCA(DTR, 4)
+    logNaiveMVG = NaiveMVGClassifier(D, LTR)
+    logNaiveMVG.train()
+    P = logNaiveMVG.classify(util.PCA(DTE,4))
+    SPost = P.argmax(axis=0)
+    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    print(f"Error rate : {error} \nNormalized DCF : {DCF}")
+
+
+    print("----- TiedMVG -----")
     logTiedMVG.train()
     P = logTiedMVG.classify(DTE)
     SPost = P.argmax(axis=0)
-    error = (SPost != LTE).sum() / LTE.shape[0] * 100
-    print(error)
+    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
-    error, _ = LogRegClass(DTR, LTR, 0.00001).evaluate(DTE, LTE)
-    print(error)
-    print(util.Compute_DCF(LogRegClass(DTR, LTR, 1).confusion_matrix(DTE, LTE), workPoint))
+    print("----- log Regression -----")
+    logReg.train()
+    PLabels = logReg.classify(DTE)
+    error, DCF = util.evaluate(PLabels, LTE, workPoint)
+    print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     util.k_folds(DTR, LTR, DTR.shape[0], MVGClassifier)

@@ -29,6 +29,13 @@ def within_class_covariance(D, N):
     return dataCovarianceMatrix(D)[0] * D.size / N
 
 
+def PCA(D,m):
+    C,_ = dataCovarianceMatrix(D)
+    U,_,_ = numpy.linalg.svd(C)
+    P = U[:,0:m]
+    return numpy.dot(P.T,D)
+
+
 def Compute_Anormalized_DCF(matrix, pi, C_fn, C_fp):
     FNR = matrix[0][1] / (matrix[0][1] + matrix[1][1])
     FPR = matrix[1][0] / (matrix[0][0] + matrix[1][0])
@@ -190,3 +197,9 @@ def plot_bayes_error(effPriorLogOdds, DCFs, minDCFs):
     plt.ylim([0, 1.1])
     plt.xlim([-3, 3])
     plt.show()
+
+def evaluate(PLabel: numpy.array , LTE:numpy.array , workPoint:WorkPoint):
+    errRate = ((LTE != PLabel).astype(int).sum() / LTE.shape[0]) * 100
+    matrix = confusion_matrix(LTE, PLabel)
+    _,DCF = Compute_DCF(matrix,workPoint)
+    return errRate , DCF
