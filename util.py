@@ -1,4 +1,5 @@
 import numpy
+from matplotlib import pyplot as plt
 from Classifiers import ClassifiersInterface
 
 
@@ -163,3 +164,22 @@ def k_folds(DTR, LTR, K, model: ClassifiersInterface):
 
     mean_err_rate = numpy.array(error_rates).mean()
     print(mean_err_rate)
+
+
+def plot_roc_curve(FPRs, TPRs):
+    plt.figure()
+    plt.ylim([0, 1])
+    plt.xlim([0, 1])
+    plt.plot(FPRs, TPRs)
+    plt.grid()
+    plt.show()
+
+
+def plot_bayes_error(effPriorLogOdds, DCFs, minDCFs):
+    plt.figure()
+    plt.plot(effPriorLogOdds, DCFs, label='DCF', color='r')
+    plt.plot(effPriorLogOdds, minDCFs, label='min DCF', color='b')
+    plt.legend()
+    plt.ylim([0, 1.1])
+    plt.xlim([-3, 3])
+    plt.show()
