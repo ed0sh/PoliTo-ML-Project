@@ -10,6 +10,13 @@ def vrow(v):
     return v.reshape((1, v.size))
 
 
+class WorkPoint:
+    def __init__(self, pi, C_fn, C_fp):
+        self.pi = pi
+        self.C_fn = C_fn
+        self.C_fp = C_fp
+
+
 def dataCovarianceMatrix(D):
     mu = (D.mean(1))
     DC = D - vcol(mu)
@@ -34,10 +41,10 @@ def Compute_Normalized_DCF(DCF, pi, C_fn, C_fp):
     return DCF / optimal_risk
 
 
-def Compute_DCF(matrix, pi, C_fn, C_fp):
-    DCF = Compute_Anormalized_DCF(matrix, pi, C_fn, C_fp)
-    nDCF = Compute_Normalized_DCF(DCF, pi, C_fn, C_fp)
-    return (DCF, nDCF)
+def Compute_DCF(matrix, workPoint:WorkPoint):
+    DCF = Compute_Anormalized_DCF(matrix, workPoint.pi, workPoint.C_fn, workPoint.C_fp)
+    nDCF = Compute_Normalized_DCF(DCF, workPoint.pi, workPoint.C_fn, workPoint.C_fp)
+    return DCF, nDCF
 
 
 def logpdf_GAU_ND(X, mu, C):
