@@ -1,7 +1,11 @@
 import numpy
+
 import util
-from Classifier import logMVG , linearMVG , logTiedMVG , logNaiveMVG
-from Project.Classifiers.LogisticRegression import LogRegClass
+from Classifiers.LogisticRegression import LogRegClass
+from Classifiers.MVGClassifier import MVGClassifier
+from Classifiers.NaiveMVGClassifier import NaiveMVGClassifier
+from Classifiers.TiedMVGClassifier import TiedMVGClassifier
+
 
 def readfile(file):
     DList = []
@@ -22,32 +26,39 @@ def readfile(file):
                 labelsList.append(label)
             except:
                 pass
-        D , L = numpy.hstack(DList), numpy.array(labelsList, dtype=numpy.int32)
+        D, L = numpy.hstack(DList), numpy.array(labelsList, dtype=numpy.int32)
         return D, L
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     # Load the dataset
     (DTR, LTR) = readfile('data/Train.csv')
     (DTE, LTE) = readfile('data/Test.csv')
 
-    _, P = logMVG(DTR, LTR, DTE)
+    logMVG = MVGClassifier(DTR, LTR)
+    logNaiveMVG = NaiveMVGClassifier(DTR, LTR)
+    logTiedMVG = TiedMVGClassifier(DTR, LTR)
+
+    logMVG.train()
+    _, P = logMVG.classify(DTE)
     SPost = P.argmax(axis=0)
     error = (SPost != LTE).sum() / LTE.shape[0] * 100
     print(error)
 
-    _, P = logNaiveMVG(DTR, LTR, DTE)
+    logNaiveMVG.train()
+    _, P = logNaiveMVG.classify(DTE)
     SPost = P.argmax(axis=0)
     error = (SPost != LTE).sum() / LTE.shape[0] * 100
     print(error)
 
-    _, P = logTiedMVG(DTR, LTR, DTE)
+    logTiedMVG.train()
+    _, P = logTiedMVG.classify(DTE)
     SPost = P.argmax(axis=0)
     error = (SPost != LTE).sum() / LTE.shape[0] * 100
     print(error)
 
-    error, w, b = LogRegClass(DTR, LTR, 0.00001).evaluate(DTE, LTE)
+    error, PLabel = LogRegClass(DTR, LTR, 0.00001).evaluate(DTE, LTE)
     print(error)
     print(LogRegClass(DTR, LTR, 1).confusion_matrix(DTE, LTE))
 
-    util.k_folds(DTR,LTR,DTR.shape[0],logMVG)
+    util.k_folds(DTR, LTR, DTR.shape[0], MVGClassifier)

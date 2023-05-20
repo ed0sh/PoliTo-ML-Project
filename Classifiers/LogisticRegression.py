@@ -1,6 +1,6 @@
 import numpy
 
-from Project import util
+import util
 import scipy.special
 
 
@@ -9,11 +9,11 @@ class LogRegClass:
         self.DTR = DTR
         self.ZTR = LTR * 2.0 - 1
         self.l = l
-        self.dim = DTR.shape[0]
+        self.nSamples = DTR.shape[0]
 
     def logreg_obj(self, v):
         # Compute and return the objective function value. You can retrieve all required information from self.DTR, self.LTR, self.l
-        w = util.vcol(v[0: self.dim])
+        w = util.vcol(v[0: self.nSamples])
         b = v[-1]
         scores = numpy.dot(w.T, self.DTR) + b
         loss_per_sample = numpy.logaddexp(0, -self.ZTR * scores)
@@ -31,8 +31,8 @@ class LogRegClass:
         Score = numpy.dot(w.T, DTE) + b
         PLabel = (Score > 0).astype(int)
         Error = ((LTE != PLabel).astype(int).sum() / DTE.shape[1]) * 100
-        return Error , PLabel
+        return Error, PLabel
 
     def confusion_matrix(self, DTE: numpy.array, LTE: numpy.array):
-        _ , PLabel = self.evaluate(DTE,LTE)
+        _, PLabel = self.evaluate(DTE, LTE)
         return util.confusion_matrix(LTE, PLabel)

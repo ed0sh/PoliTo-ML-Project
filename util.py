@@ -1,4 +1,5 @@
 import numpy
+from Classifiers import ClassifiersInterface
 
 
 def vcol(v):
@@ -135,7 +136,7 @@ def split_k_folds(DTR, LTR, K, seed=0):
     return d_result, l_result
 
 
-def k_folds(DTR, LTR, K, model):
+def k_folds(DTR, LTR, K, model: ClassifiersInterface):
     d_folds, l_folds = split_k_folds(DTR, LTR, K)
 
     error_rates = []
@@ -152,7 +153,9 @@ def k_folds(DTR, LTR, K, model):
             data_train_set = numpy.hstack(d_folds[0:i])
             labels_train_set = numpy.hstack(l_folds[0:i])
 
-        _, P = model(data_train_set, labels_train_set, data_test_set)
+        modelObj = model(data_train_set, labels_train_set)
+        modelObj.train()
+        _, P = modelObj.classify(data_test_set)
         predicted = numpy.argmax(P, axis=0)
         n_mispredicted = len(predicted[predicted != labels_test_set])
         err_rate = n_mispredicted * 100 / predicted.shape[0]

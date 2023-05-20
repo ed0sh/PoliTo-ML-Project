@@ -1,19 +1,21 @@
 import numpy
 import util
-import scipy.special
 from Classifiers.MultivariateGaussian import MultivariateGaussianClass
 
 
-class MultivariateGaussianClassifier(MultivariateGaussianClass):
+class TiedMVGClassifier(MultivariateGaussianClass):
     def __init__(self, DTR: numpy.array, LTR: numpy.array):
         super().__init__(DTR, LTR)
 
     def classify(self, DTE: numpy.array):
-        super().classify(DTE)
+        return super().classify(DTE)
 
     def train(self):
+        Sw = numpy.zeros((self.nSamples, self.nSamples))
+        for i in range(0, self.nClasses):
+            Sw += util.within_class_covariance(self.DTR[:, self.LTR == i], self.DTR.size)
+
         for lab in numpy.unique(self.LTR):
             DCLS = self.DTR[:, self.LTR == lab]
-            C, mu = util.dataCovarianceMatrix(DCLS)
-            ones = numpy.diag(numpy.ones(DCLS.shape[0]))
-            self.hCls[lab] = (C * ones, mu)
+            _, mu = util.dataCovarianceMatrix(DCLS)
+            self.hCls[lab] = (Sw, mu)
