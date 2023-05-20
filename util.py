@@ -163,7 +163,7 @@ def k_folds(DTR, LTR, K, model: ClassifiersInterface):
 
         modelObj = model(data_train_set, labels_train_set)
         modelObj.train()
-        _, P = modelObj.classify(data_test_set)
+        P = modelObj.classify(data_test_set)
         predicted = numpy.argmax(P, axis=0)
         n_mispredicted = len(predicted[predicted != labels_test_set])
         err_rate = n_mispredicted * 100 / predicted.shape[0]

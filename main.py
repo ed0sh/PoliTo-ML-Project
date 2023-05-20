@@ -41,19 +41,19 @@ if __name__ == '__main__':
     workPoint = util.WorkPoint(0.5, 1, 10)
 
     logMVG.train()
-    _, P = logMVG.classify(DTE)
+    P = logMVG.classify(DTE)
     SPost = P.argmax(axis=0)
     error = (SPost != LTE).sum() / LTE.shape[0] * 100
     print(error)
 
     logNaiveMVG.train()
-    _, P = logNaiveMVG.classify(DTE)
+    P = logNaiveMVG.classify(DTE)
     SPost = P.argmax(axis=0)
     error = (SPost != LTE).sum() / LTE.shape[0] * 100
     print(error)
 
     logTiedMVG.train()
-    _, P = logTiedMVG.classify(DTE)
+    P = logTiedMVG.classify(DTE)
     SPost = P.argmax(axis=0)
     error = (SPost != LTE).sum() / LTE.shape[0] * 100
     print(error)
