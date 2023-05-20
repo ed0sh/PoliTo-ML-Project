@@ -38,6 +38,7 @@ if __name__ == '__main__':
     logMVG = MVGClassifier(DTR, LTR)
     logNaiveMVG = NaiveMVGClassifier(DTR, LTR)
     logTiedMVG = TiedMVGClassifier(DTR, LTR)
+    workPoint = util.WorkPoint(0.5, 1, 10)
 
     logMVG.train()
     _, P = logMVG.classify(DTE)
@@ -57,8 +58,8 @@ if __name__ == '__main__':
     error = (SPost != LTE).sum() / LTE.shape[0] * 100
     print(error)
 
-    error, PLabel = LogRegClass(DTR, LTR, 0.00001).evaluate(DTE, LTE)
+    error, _ = LogRegClass(DTR, LTR, 0.00001).evaluate(DTE, LTE)
     print(error)
-    print(LogRegClass(DTR, LTR, 1).confusion_matrix(DTE, LTE))
+    print(util.Compute_DCF(LogRegClass(DTR, LTR, 1).confusion_matrix(DTE, LTE), workPoint))
 
     util.k_folds(DTR, LTR, DTR.shape[0], MVGClassifier)
