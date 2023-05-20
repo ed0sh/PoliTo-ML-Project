@@ -11,8 +11,12 @@ class MultivariateGaussianClass(ClassifiersInterface):
         self.nClasses = numpy.unique(LTR).shape[0]
         self.nSamples = DTR.shape[0]
         self.hCls = {}
+        self.trained = False
 
     def classify(self, DTE: numpy.array):
+        if not self.trained:
+            raise RuntimeError('Classifier is not trained yet')
+
         logPrior = numpy.log(util.vcol(numpy.ones(self.nClasses) / self.nClasses))
         S = []
         for hyp in numpy.unique(self.LTR):

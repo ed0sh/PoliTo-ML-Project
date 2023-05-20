@@ -19,3 +19,5 @@ class TiedMVGClassifier(MultivariateGaussianClass):
             DCLS = self.DTR[:, self.LTR == lab]
             _, mu = util.dataCovarianceMatrix(DCLS)
             self.hCls[lab] = (Sw, mu)
+
+        self.trained = True

@@ -14,3 +14,5 @@ class MVGClassifier(MultivariateGaussianClass):
         for label in numpy.unique(self.LTR):
             DCLS = self.DTR[:, self.LTR == label]
             self.hCls[label] = util.dataCovarianceMatrix(DCLS)
+
+        self.trained = True

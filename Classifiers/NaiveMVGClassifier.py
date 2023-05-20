@@ -16,3 +16,5 @@ class NaiveMVGClassifier(MultivariateGaussianClass):
             C, mu = util.dataCovarianceMatrix(DCLS)
             ones = numpy.diag(numpy.ones(DCLS.shape[0]))
             self.hCls[lab] = (C * ones, mu)
+
+        self.trained = True
