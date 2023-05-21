@@ -4,8 +4,8 @@ from Classifiers.MultivariateGaussian import MultivariateGaussianClass
 
 
 class NaiveMVGClassifier(MultivariateGaussianClass):
-    def __init__(self, DTR: numpy.array, LTR: numpy.array):
-        super().__init__(DTR, LTR)
+    def __init__(self, DTR: numpy.array, LTR: numpy.array, prior: float):
+        super().__init__(DTR, LTR, prior)
 
     def classify(self, DTE: numpy.array):
         return super().classify(DTE)

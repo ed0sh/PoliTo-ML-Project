@@ -152,7 +152,7 @@ def split_k_folds(DTR: numpy.array, LTR: numpy.array, K: int, seed=0):
     return d_result, l_result
 
 
-def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterface):
+def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterface, prior: float):
     d_folds, l_folds = split_k_folds(DTR, LTR, K)
 
     error_rates = []
@@ -169,7 +169,7 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterf
             data_train_set = numpy.hstack(d_folds[0:i])
             labels_train_set = numpy.hstack(l_folds[0:i])
 
-        modelObj = model(data_train_set, labels_train_set)
+        modelObj = model(data_train_set, labels_train_set, prior)
         modelObj.train()
         P = modelObj.classify(data_test_set)
         predicted = numpy.argmax(P, axis=0)

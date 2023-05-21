@@ -39,12 +39,12 @@ if __name__ == '__main__':
     util.plot_scatter(DTR, LTR)
     util.plot_hists(DTR, LTR)
 
-    logMVG = MVGClassifier(DTR, LTR)
-    logNaiveMVG = NaiveMVGClassifier(DTR, LTR)
-    logTiedMVG = TiedMVGClassifier(DTR, LTR)
-    logReg = LogRegClass(DTR, LTR, 0.00001)
-
     workPoint = util.WorkPoint(0.5, 1, 10)
+
+    logMVG = MVGClassifier(DTR, LTR, workPoint.pi)
+    logNaiveMVG = NaiveMVGClassifier(DTR, LTR, workPoint.pi)
+    logTiedMVG = TiedMVGClassifier(DTR, LTR, workPoint.pi)
+    logReg = LogRegClass(DTR, LTR, 0.00001)
 
     print("----- MVG -----")
     logMVG.train()
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     print("----- NaiveMVG with PCA -----")
     D = util.PCA(DTR, 4)
-    logNaiveMVG = NaiveMVGClassifier(D, LTR)
+    logNaiveMVG = NaiveMVGClassifier(D, LTR, workPoint.pi)
     logNaiveMVG.train()
     P = logNaiveMVG.classify(util.PCA(DTE, 4))
     SPost = P.argmax(axis=0)
@@ -82,4 +82,4 @@ if __name__ == '__main__':
     error, DCF = util.evaluate(PLabels, LTE, workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
-    util.k_folds(DTR, LTR, DTR.shape[0], MVGClassifier)
+    util.k_folds(DTR, LTR, DTR.shape[0], MVGClassifier, workPoint.pi)
