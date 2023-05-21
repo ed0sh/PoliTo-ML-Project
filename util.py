@@ -218,8 +218,22 @@ def plot_scatter(DTR: numpy.array, LTR: numpy.array):
                 plt.legend()
                 pdf.savefig(fig)
                 plt.close(fig)
-                # plt.savefig(f'scatter_{i}_{j}.pdf')
-                # plt.show()
+
+
+def plot_hists(DTR: numpy.array, LTR: numpy.array):
+    f0 = DTR[:, LTR == 0]
+    f1 = DTR[:, LTR == 1]
+
+    with PdfPages('target/hists.pdf') as pdf:
+        for i in range(DTR.shape[0]):
+            fig = plt.figure()
+            plt.xlabel(f"Feature: {i}")
+            plt.hist(f0[i, :], density=True, bins=15, label='Spoofed', alpha=0.4)
+            plt.hist(f1[i, :], density=True, bins=15, label='Authentic', alpha=0.4)
+
+            plt.legend()
+            pdf.savefig(fig)
+            plt.close(fig)
 
 
 def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):

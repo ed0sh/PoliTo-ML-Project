@@ -37,6 +37,7 @@ if __name__ == '__main__':
     (DTE, LTE) = readfile('data/Test.csv')
 
     util.plot_scatter(DTR, LTR)
+    util.plot_hists(DTR, LTR)
 
     logMVG = MVGClassifier(DTR, LTR)
     logNaiveMVG = NaiveMVGClassifier(DTR, LTR)
