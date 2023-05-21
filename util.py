@@ -1,4 +1,5 @@
 import numpy
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -25,6 +26,11 @@ def dataCovarianceMatrix(D: numpy.array):
     DC = D - vcol(mu)
     C = numpy.dot(DC, DC.T) / DC.shape[1]
     return C, vcol(mu)
+
+def dataCorrelationMatrix(D: numpy.array):
+    C, _ = dataCovarianceMatrix(D)
+    std = numpy.sqrt(np.diag(C))
+    return C / np.outer(std, std)
 
 
 def within_class_covariance(D: numpy.array, N: int):

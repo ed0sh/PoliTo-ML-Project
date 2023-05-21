@@ -49,6 +49,10 @@ if __name__ == '__main__':
     logTiedMVG = TiedMVGClassifier(DTR, LTR, workPoint.pi)
     logReg = LogRegClass(DTR, LTR, 0.00001)
 
+    print("----- Feature pairs with Correlation > 0.5-----")
+    correlation_matrix = util.dataCorrelationMatrix(DTR) - numpy.diag(numpy.ones(DTR.shape[0]))
+    print((numpy.abs(correlation_matrix) > 0.5).astype(int).sum() / 2)
+
     print("----- MVG -----")
     logMVG.train()
     P = logMVG.classify(DTE)
