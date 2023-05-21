@@ -33,6 +33,12 @@ def dataCorrelationMatrix(D: numpy.array):
     return C / np.outer(std, std)
 
 
+def evaluateCorrelation(D: numpy.array, threshold: float):
+    correlation_matrix = dataCorrelationMatrix(D)
+    featurePairsOver = (numpy.abs(correlation_matrix - numpy.diag(numpy.ones(D.shape[0])) ) > threshold).astype(int).sum() / 2
+    meanCorrelation = correlation_matrix.sum() / correlation_matrix.shape[0]**2
+    return featurePairsOver.astype(int), meanCorrelation
+
 def within_class_covariance(D: numpy.array, N: int):
     return dataCovarianceMatrix(D)[0] * D.size / N
 
