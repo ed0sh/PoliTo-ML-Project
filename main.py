@@ -1,4 +1,5 @@
 import numpy
+from matplotlib import pyplot as plt
 
 import util
 from Classifiers.LogisticRegression import LogRegClass
@@ -35,6 +36,8 @@ if __name__ == '__main__':
     (DTR, LTR) = readfile('data/Train.csv')
     (DTE, LTE) = readfile('data/Test.csv')
 
+    util.plot_scatter(DTR, LTR)
+
     logMVG = MVGClassifier(DTR, LTR)
     logNaiveMVG = NaiveMVGClassifier(DTR, LTR)
     logTiedMVG = TiedMVGClassifier(DTR, LTR)
@@ -49,7 +52,6 @@ if __name__ == '__main__':
     error, DCF = util.evaluate(SPost, LTE, workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
-
     print("----- Naive MVG -----")
     logNaiveMVG.train()
     P = logNaiveMVG.classify(DTE)
@@ -61,11 +63,10 @@ if __name__ == '__main__':
     D = util.PCA(DTR, 4)
     logNaiveMVG = NaiveMVGClassifier(D, LTR)
     logNaiveMVG.train()
-    P = logNaiveMVG.classify(util.PCA(DTE,4))
+    P = logNaiveMVG.classify(util.PCA(DTE, 4))
     SPost = P.argmax(axis=0)
     error, DCF = util.evaluate(SPost, LTE, workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
-
 
     print("----- TiedMVG -----")
     logTiedMVG.train()

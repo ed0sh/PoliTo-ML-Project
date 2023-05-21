@@ -1,42 +1,44 @@
 import numpy
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
 from Classifiers import ClassifiersInterface
 
 
-def vcol(v):
+def vcol(v: numpy.array):
     return v.reshape((v.size, 1))
 
 
-def vrow(v):
+def vrow(v: numpy.array):
     return v.reshape((1, v.size))
 
 
 class WorkPoint:
-    def __init__(self, pi, C_fn, C_fp):
+    def __init__(self, pi: float, C_fn: float, C_fp: float):
         self.pi = pi
         self.C_fn = C_fn
         self.C_fp = C_fp
 
 
-def dataCovarianceMatrix(D):
+def dataCovarianceMatrix(D: numpy.array):
     mu = (D.mean(1))
     DC = D - vcol(mu)
     C = numpy.dot(DC, DC.T) / DC.shape[1]
     return C, vcol(mu)
 
 
-def within_class_covariance(D, N):
+def within_class_covariance(D: numpy.array, N: int):
     return dataCovarianceMatrix(D)[0] * D.size / N
 
 
-def PCA(D,m):
-    C,_ = dataCovarianceMatrix(D)
-    U,_,_ = numpy.linalg.svd(C)
-    P = U[:,0:m]
-    return numpy.dot(P.T,D)
+def PCA(D: numpy.array, m: int):
+    C, _ = dataCovarianceMatrix(D)
+    U, _, _ = numpy.linalg.svd(C)
+    P = U[:, 0:m]
+    return numpy.dot(P.T, D)
 
 
-def Compute_Anormalized_DCF(matrix, pi, C_fn, C_fp):
+def Compute_Anormalized_DCF(matrix: numpy.array, pi: float, C_fn: float, C_fp: float):
     FNR = matrix[0][1] / (matrix[0][1] + matrix[1][1])
     FPR = matrix[1][0] / (matrix[0][0] + matrix[1][0])
 
@@ -44,18 +46,18 @@ def Compute_Anormalized_DCF(matrix, pi, C_fn, C_fp):
     return DCF
 
 
-def Compute_Normalized_DCF(DCF, pi, C_fn, C_fp):
+def Compute_Normalized_DCF(DCF: numpy.array, pi: float, C_fn: float, C_fp: float):
     optimal_risk = numpy.min([pi * C_fn, (1 - pi) * C_fp])
     return DCF / optimal_risk
 
 
-def Compute_DCF(matrix, workPoint:WorkPoint):
+def Compute_DCF(matrix: numpy.array, workPoint: WorkPoint):
     DCF = Compute_Anormalized_DCF(matrix, workPoint.pi, workPoint.C_fn, workPoint.C_fp)
     nDCF = Compute_Normalized_DCF(DCF, workPoint.pi, workPoint.C_fn, workPoint.C_fp)
     return DCF, nDCF
 
 
-def logpdf_GAU_ND(X, mu, C):
+def logpdf_GAU_ND(X: numpy.array, mu: float, C: numpy.array):
     _, log_determinant = numpy.linalg.slogdet(C)
     firstTerm = - (numpy.shape(X)[0] * 0.5) * numpy.log(2 * numpy.pi) - log_determinant * 0.5
     L = numpy.linalg.inv(C)
@@ -63,7 +65,7 @@ def logpdf_GAU_ND(X, mu, C):
     return firstTerm - 0.5 * (XC * numpy.dot(L, XC)).sum(0)
 
 
-def split_db_2to1(D, L, seed=0):
+def split_db_2to1(D: numpy.array, L: numpy.array, seed=0):
     nTrain = int(D.shape[1] * 2.0 / 3.0)
     numpy.random.seed(seed)
     idx = numpy.random.permutation(D.shape[1])
@@ -76,7 +78,7 @@ def split_db_2to1(D, L, seed=0):
     return (DTR, LTR), (DTE, LTE)
 
 
-def confusion_matrix(LTE, SPost):
+def confusion_matrix(LTE: numpy.array, SPost: numpy.array):
     n = numpy.unique(LTE).shape[0]
     matrix = numpy.zeros([n, n])
     for i in numpy.unique(LTE):
@@ -85,8 +87,7 @@ def confusion_matrix(LTE, SPost):
     return matrix
 
 
-def split_k_folds(DTR, LTR, K, seed=0):
-
+def split_k_folds(DTR: numpy.array, LTR: numpy.array, K: int, seed=0):
     d_folds = []
     l_folds = []
     new_k = K
@@ -151,7 +152,7 @@ def split_k_folds(DTR, LTR, K, seed=0):
     return d_result, l_result
 
 
-def k_folds(DTR, LTR, K, model: ClassifiersInterface):
+def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterface):
     d_folds, l_folds = split_k_folds(DTR, LTR, K)
 
     error_rates = []
@@ -180,7 +181,7 @@ def k_folds(DTR, LTR, K, model: ClassifiersInterface):
     print(mean_err_rate)
 
 
-def plot_roc_curve(FPRs, TPRs):
+def plot_roc_curve(FPRs: numpy.array, TPRs: numpy.array):
     plt.figure()
     plt.ylim([0, 1])
     plt.xlim([0, 1])
@@ -189,7 +190,7 @@ def plot_roc_curve(FPRs, TPRs):
     plt.show()
 
 
-def plot_bayes_error(effPriorLogOdds, DCFs, minDCFs):
+def plot_bayes_error(effPriorLogOdds: numpy.array, DCFs: numpy.array, minDCFs: numpy.array):
     plt.figure()
     plt.plot(effPriorLogOdds, DCFs, label='DCF', color='r')
     plt.plot(effPriorLogOdds, minDCFs, label='min DCF', color='b')
@@ -198,8 +199,31 @@ def plot_bayes_error(effPriorLogOdds, DCFs, minDCFs):
     plt.xlim([-3, 3])
     plt.show()
 
-def evaluate(PLabel: numpy.array , LTE:numpy.array , workPoint:WorkPoint):
+
+def plot_scatter(DTR: numpy.array, LTR: numpy.array):
+    f0 = DTR[:, LTR == 0]
+    f1 = DTR[:, LTR == 1]
+
+    with PdfPages('target/scatters.pdf') as pdf:
+        for i in range(DTR.shape[0]):
+            for j in range(i, DTR.shape[0]):
+                if i == j:
+                    continue
+                fig = plt.figure()
+                plt.xlabel(f"Feature: {i}")
+                plt.ylabel(f"Feature: {j}")
+                plt.scatter(f0[i, :], f0[j, :], label='Spoofed')
+                plt.scatter(f1[i, :], f1[j, :], label='Authentic')
+
+                plt.legend()
+                pdf.savefig(fig)
+                plt.close(fig)
+                # plt.savefig(f'scatter_{i}_{j}.pdf')
+                # plt.show()
+
+
+def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
     errRate = ((LTE != PLabel).astype(int).sum() / LTE.shape[0]) * 100
     matrix = confusion_matrix(LTE, PLabel)
-    _,DCF = Compute_DCF(matrix,workPoint)
-    return errRate , DCF
+    _, DCF = Compute_DCF(matrix, workPoint)
+    return errRate, DCF
