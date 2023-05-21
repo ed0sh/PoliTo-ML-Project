@@ -37,6 +37,8 @@ def PCA(D: numpy.array, m: int):
     P = U[:, 0:m]
     return numpy.dot(P.T, D)
 
+def Z_Score(D:numpy.array):
+    return (D - D.mean()) / D.std()
 
 def Compute_Anormalized_DCF(matrix: numpy.array, pi: float, C_fn: float, C_fp: float):
     FNR = matrix[0][1] / (matrix[0][1] + matrix[1][1])
@@ -152,9 +154,9 @@ def split_k_folds(DTR: numpy.array, LTR: numpy.array, K: int, seed=0):
     return d_result, l_result
 
 
-def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterface, prior: float):
+def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterface, prior: float , workPoint : WorkPoint):
     d_folds, l_folds = split_k_folds(DTR, LTR, K)
-
+    DCFs = []
     error_rates = []
     for i in range(len(d_folds)):
         data_test_set = d_folds[i]
@@ -173,12 +175,13 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterf
         modelObj.train()
         P = modelObj.classify(data_test_set)
         predicted = numpy.argmax(P, axis=0)
-        n_mispredicted = len(predicted[predicted != labels_test_set])
-        err_rate = n_mispredicted * 100 / predicted.shape[0]
+        err_rate , DCF = evaluate(predicted , labels_test_set , workPoint)
         error_rates.append(err_rate)
+        DCFs.append(DCF)
 
     mean_err_rate = numpy.array(error_rates).mean()
-    print(mean_err_rate)
+    mean_DCF = numpy.array(DCFs).mean()
+    return mean_err_rate, mean_DCF
 
 
 def plot_roc_curve(FPRs: numpy.array, TPRs: numpy.array):
