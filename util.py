@@ -39,9 +39,17 @@ def evaluateCorrelation(D: numpy.array, threshold: float):
     meanCorrelation = correlation_matrix.sum() / correlation_matrix.shape[0]**2
     return featurePairsOver.astype(int), meanCorrelation
 
+def evaluateClassCorrelation(D: numpy.array,L: numpy.array, threshold: float):
+    meanCorrelations = []
+    featurePairsOver = []
+    for label in np.unique(L):
+        pairs, mean = evaluateCorrelation(D[:,L == label], threshold)
+        meanCorrelations.append(mean)
+        featurePairsOver.append(pairs)
+    return featurePairsOver, meanCorrelations
+
 def within_class_covariance(D: numpy.array, N: int):
     return dataCovarianceMatrix(D)[0] * D.size / N
-
 
 def PCA(D: numpy.array, m: int):
     C, _ = dataCovarianceMatrix(D)

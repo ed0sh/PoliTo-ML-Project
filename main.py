@@ -50,7 +50,7 @@ if __name__ == '__main__':
     logReg = LogRegClass(DTR, LTR, 0.00001)
 
     print("----- Dataset Correlation -----")
-    pairs , mean = util.evaluateCorrelation(DTR, 0.5)
+    pairs, mean = util.evaluateClassCorrelation(DTR, LTR, 0.5)
     print(f"Feature Pairs over threshold : {pairs}\nCorrelation Mean : {mean}")
 
     print("----- MVG -----")
