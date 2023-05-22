@@ -36,3 +36,10 @@ class MultivariateGaussianClass(ClassifiersInterface):
     def train(self):
         super().train()
 
+    def update_dataset(self, DTR: numpy.array, LTR: numpy.array):
+        self.DTR = DTR
+        self.LTR = LTR
+        self.nClasses = numpy.unique(LTR).shape[0]
+        self.nSamples = DTR.shape[0]
+        self.hCls = {}
+        self.trained = False

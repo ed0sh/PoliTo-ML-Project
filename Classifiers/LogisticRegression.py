@@ -50,6 +50,14 @@ class LogRegClass(ClassifiersInterface):
         _, PLabel = self.evaluate(DTE, LTE)
         return util.confusion_matrix(LTE, PLabel)
 
+    def update_dataset(self, DTR: numpy.array, LTR: numpy.array):
+        self.b = None
+        self.w = None
+        self.DTR = DTR
+        self.ZTR = LTR * 2.0 - 1
+        self.nSamples = DTR.shape[0]
+        self.trained = False
+
     @staticmethod
     def optimize_lambda(DTR: numpy.array, LTR: numpy.array, workPoint: util.WorkPoint, tolerance: float = 1e-5,
                         num_iterations: int = 100, starting_lambda: float = 1e-1, offset: float = 1) -> 'LogRegClass':

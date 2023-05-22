@@ -27,6 +27,7 @@ def dataCovarianceMatrix(D: numpy.array):
     C = numpy.dot(DC, DC.T) / DC.shape[1]
     return C, vcol(mu)
 
+
 def dataCorrelationMatrix(D: numpy.array):
     C, _ = dataCovarianceMatrix(D)
     std = numpy.sqrt(np.diag(C))
@@ -35,21 +36,25 @@ def dataCorrelationMatrix(D: numpy.array):
 
 def evaluateCorrelation(D: numpy.array, threshold: float):
     correlation_matrix = dataCorrelationMatrix(D)
-    featurePairsOver = (numpy.abs(correlation_matrix - numpy.diag(numpy.ones(D.shape[0])) ) > threshold).astype(int).sum() / 2
-    meanCorrelation = correlation_matrix.sum() / correlation_matrix.shape[0]**2
+    featurePairsOver = (numpy.abs(correlation_matrix - numpy.diag(numpy.ones(D.shape[0]))) > threshold).astype(
+        int).sum() / 2
+    meanCorrelation = correlation_matrix.sum() / correlation_matrix.shape[0] ** 2
     return featurePairsOver.astype(int), meanCorrelation
 
-def evaluateClassCorrelation(D: numpy.array,L: numpy.array, threshold: float):
+
+def evaluateClassCorrelation(D: numpy.array, L: numpy.array, threshold: float):
     meanCorrelations = []
     featurePairsOver = []
     for label in np.unique(L):
-        pairs, mean = evaluateCorrelation(D[:,L == label], threshold)
+        pairs, mean = evaluateCorrelation(D[:, L == label], threshold)
         meanCorrelations.append(mean)
         featurePairsOver.append(pairs)
     return featurePairsOver, meanCorrelations
 
+
 def within_class_covariance(D: numpy.array, N: int):
     return dataCovarianceMatrix(D)[0] * D.size / N
+
 
 def PCA(D: numpy.array, m: int):
     C, _ = dataCovarianceMatrix(D)
@@ -57,8 +62,10 @@ def PCA(D: numpy.array, m: int):
     P = U[:, 0:m]
     return numpy.dot(P.T, D)
 
-def Z_Score(D:numpy.array):
+
+def Z_Score(D: numpy.array):
     return (D - D.mean()) / D.std()
+
 
 def Compute_Anormalized_DCF(matrix: numpy.array, pi: float, C_fn: float, C_fp: float):
     FNR = matrix[0][1] / (matrix[0][1] + matrix[1][1])
@@ -174,7 +181,7 @@ def split_k_folds(DTR: numpy.array, LTR: numpy.array, K: int, seed=0):
     return d_result, l_result
 
 
-def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterface, prior: float , workPoint : WorkPoint):
+def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: ClassifiersInterface, workPoint: WorkPoint):
     d_folds, l_folds = split_k_folds(DTR, LTR, K)
     DCFs = []
     error_rates = []
@@ -191,11 +198,11 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, model: ClassifiersInterf
             data_train_set = numpy.hstack(d_folds[0:i])
             labels_train_set = numpy.hstack(l_folds[0:i])
 
-        modelObj = model(data_train_set, labels_train_set, prior)
-        modelObj.train()
-        P = modelObj.classify(data_test_set)
+        modelObject.update_dataset(data_train_set, labels_train_set)
+        modelObject.train()
+        P = modelObject.classify(data_test_set)
         predicted = numpy.argmax(P, axis=0)
-        err_rate , DCF = evaluate(predicted , labels_test_set , workPoint)
+        err_rate, DCF = evaluate(predicted, labels_test_set, workPoint)
         error_rates.append(err_rate)
         DCFs.append(DCF)
 

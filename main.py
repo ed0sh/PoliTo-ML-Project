@@ -120,5 +120,6 @@ if __name__ == '__main__':
     print(f"Error rate : {error} \nNormalized DCF : {DCF} \nLambda : {logReg.lam}")
 
     print("----- KFolds logMVG -----")
-    error, DCF = util.k_folds(DTR, LTR, DTR.shape[0], MVGClassifier, workPoint.pi, workPoint)
+    logMVGObj = MVGClassifier(DTR, LTR, workPoint.pi)
+    error, DCF = util.k_folds(DTR, LTR, DTR.shape[0], logMVGObj, workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
