@@ -228,8 +228,9 @@ def plot_hists(DTR: numpy.array, LTR: numpy.array):
         for i in range(DTR.shape[0]):
             fig = plt.figure()
             plt.xlabel(f"Feature: {i}")
-            plt.hist(f0[i, :], density=True, bins=15, label='Spoofed', alpha=0.4)
-            plt.hist(f1[i, :], density=True, bins=15, label='Authentic', alpha=0.4)
+            plt.ylabel("Density")
+            plt.hist(f0[i, :], density=True, bins=20, label='Spoofed', alpha=0.4)
+            plt.hist(f1[i, :], density=True, bins=20, label='Authentic', alpha=0.4)
 
             plt.legend()
             pdf.savefig(fig)
