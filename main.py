@@ -112,15 +112,12 @@ if __name__ == '__main__':
     error, DCF = util.evaluate(PLabels, LTE, workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
-    print("----- log Regression with different lambdas-----")
-    for lam in [10 ** x for x in range(-8, 3)]:
-        print(f"Actual Lambda : {lam}")
-        logReg = LogRegClass(DTR, LTR, lam)
-        logReg.train()
-        PLabels = logReg.classify(DTE)
-        error, DCF = util.evaluate(PLabels, LTE, workPoint)
-        print(f"Error rate : {error} \nNormalized DCF : {DCF}")
-        print()
+    print("----- log Regression with optimized lambdas-----")
+    logReg = LogRegClass.optimize_lambda(DTR, LTR, workPoint)
+    logReg.train()
+    PLabels = logReg.classify(DTE)
+    error, DCF = util.evaluate(PLabels, LTE, workPoint)
+    print(f"Error rate : {error} \nNormalized DCF : {DCF} \nLambda : {logReg.lam}")
 
     print("----- KFolds logMVG -----")
     error, DCF = util.k_folds(DTR, LTR, DTR.shape[0], MVGClassifier, workPoint.pi, workPoint)
