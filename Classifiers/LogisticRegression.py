@@ -11,6 +11,7 @@ class LogRegClass(ClassifiersInterface):
         self.b = None
         self.w = None
         self.DTR = DTR
+        self.LTR = LTR
         self.ZTR = LTR * 2.0 - 1
         self.lam = l
         self.nSamples = DTR.shape[0]
@@ -61,6 +62,7 @@ class LogRegClass(ClassifiersInterface):
     @staticmethod
     def optimize_lambda(DTR: numpy.array, LTR: numpy.array, workPoint: util.WorkPoint, tolerance: float = 1e-5,
                         num_iterations: int = 100, starting_lambda: float = 1e-1, offset: float = 1) -> 'LogRegClass':
+
         minDCF, selectedLambda, offset = 1, starting_lambda, offset
         prev_DCF = float('inf')
 
@@ -89,3 +91,35 @@ class LogRegClass(ClassifiersInterface):
             num_iterations -= 1
 
         return LogRegClass(DTR, LTR, selectedLambda)
+
+    def optimize_lambda_inplace(self, workPoint: util.WorkPoint, tolerance: float = 1e-5,
+                        num_iterations: int = 100, starting_lambda: float = 1e-1, offset: float = 1):
+
+        minDCF = 1
+        selectedLambda = starting_lambda
+        offset = offset
+        prev_DCF = float('inf')
+
+        while num_iterations > 0:
+            logRegObj = LogRegClass(self.DTR, self.LTR, selectedLambda)
+            _, DCF = util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
+
+            # Calculate change derivative
+            change = prev_DCF - DCF
+            prev_DCF = DCF
+
+            if numpy.abs(offset) < tolerance:
+                break
+
+            if DCF < minDCF:
+                minDCF = DCF
+
+            if change > 0:
+                selectedLambda = selectedLambda + offset
+            else:
+                offset = - offset * 9 / 10
+                selectedLambda = selectedLambda + offset
+
+            num_iterations -= 1
+
+        self.lam = selectedLambda

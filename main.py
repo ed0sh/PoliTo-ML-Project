@@ -119,6 +119,14 @@ if __name__ == '__main__':
     error, DCF = util.evaluate(PLabels, LTE, workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF} \nLambda : {logReg.lam}")
 
+    print("----- log Regression with K-Folds optimized lambdas-----")
+    logReg = LogRegClass(DTR, LTR, 0.00001)
+    logReg.optimize_lambda_inplace(workPoint, starting_lambda=0.001, offset=10, num_iterations=10000)
+    logReg.train()
+    PLabels = logReg.classify(DTE)
+    error, DCF = util.evaluate(PLabels, LTE, workPoint)
+    print(f"Error rate : {error} \nNormalized DCF : {DCF} \nLambda : {logReg.lam}")
+
     print("----- KFolds logMVG -----")
     logMVGObj = MVGClassifier(DTR, LTR, workPoint.pi)
     error, DCF = util.k_folds(DTR, LTR, DTR.shape[0], logMVGObj, workPoint)
