@@ -49,15 +49,35 @@ class LogRegClass(ClassifiersInterface):
     def confusion_matrix(self, DTE: numpy.array, LTE: numpy.array):
         _, PLabel = self.evaluate(DTE, LTE)
         return util.confusion_matrix(LTE, PLabel)
+
     @staticmethod
-    def optimize_lambda(DTR: numpy.array , LTR: numpy.array , workPoint: util.WorkPoint) -> 'LogRegClass' :
-        minDCF , selectedLambda = 1 , None
-        for lam in [10 ** x for x in range(-8, 3)]:
-            logReg = LogRegClass(DTR, LTR, lam)
+    def optimize_lambda(DTR: numpy.array, LTR: numpy.array, workPoint: util.WorkPoint, tolerance: float = 1e-5,
+                        num_iterations: int = 100, starting_lambda: float = 1e-1, offset: float = 1) -> 'LogRegClass':
+        minDCF, selectedLambda, offset = 1, starting_lambda, offset
+        prev_DCF = float('inf')
+
+        while (num_iterations > 0):
+            logReg = LogRegClass(DTR, LTR, selectedLambda)
+            # TODO : k_folds
             logReg.train()
             PLabels = logReg.classify(DTR)
             _, DCF = util.evaluate(PLabels, LTR, workPoint)
-            if(DCF < minDCF):
+
+            # Calculate change derivative
+            change = prev_DCF - DCF
+            prev_DCF = DCF
+
+            if numpy.abs(change) < tolerance:
+                break
+
+            if DCF < minDCF:
                 minDCF = DCF
-                selectedLambda = lam
+
+            if change > 0:
+                selectedLambda = selectedLambda + offset
+            else:
+                offset = - offset / 2
+                selectedLambda = selectedLambda + offset
+            num_iterations -= 1
+
         return LogRegClass(DTR, LTR, selectedLambda)
