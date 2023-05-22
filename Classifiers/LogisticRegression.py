@@ -49,3 +49,15 @@ class LogRegClass(ClassifiersInterface):
     def confusion_matrix(self, DTE: numpy.array, LTE: numpy.array):
         _, PLabel = self.evaluate(DTE, LTE)
         return util.confusion_matrix(LTE, PLabel)
+    @staticmethod
+    def optimize_lambda(DTR: numpy.array , LTR: numpy.array , workPoint: util.WorkPoint) -> 'LogRegClass' :
+        minDCF , selectedLambda = 1 , None
+        for lam in [10 ** x for x in range(-8, 3)]:
+            logReg = LogRegClass(DTR, LTR, lam)
+            logReg.train()
+            PLabels = logReg.classify(DTR)
+            _, DCF = util.evaluate(PLabels, LTR, workPoint)
+            if(DCF < minDCF):
+                minDCF = DCF
+                selectedLambda = lam
+        return LogRegClass(DTR, LTR, selectedLambda)
