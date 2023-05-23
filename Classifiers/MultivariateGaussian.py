@@ -31,7 +31,8 @@ class MultivariateGaussianClass(ClassifiersInterface):
         logP = SJoint - util.vrow(scipy.special.logsumexp(SJoint, 0))
         # logsumexp does in a numerical stable way the sum and the exp for marginal
         P = numpy.exp(logP)
-        return P
+        predicted = numpy.argmax(P, axis=0)
+        return predicted
 
     def train(self):
         super().train()
