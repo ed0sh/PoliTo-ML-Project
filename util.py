@@ -66,7 +66,9 @@ def PCA(D: numpy.array, m: int):
 
 
 def Z_Score(D: numpy.array):
-    return (D - D.mean()) / D.std()
+    for i in range(D.shape[0]):
+        D[i] = (D[i] - D[i].mean()) / D[i].std()
+    return D
 
 
 def Compute_Anormalized_DCF(matrix: numpy.array, pi: float, C_fn: float, C_fp: float):
