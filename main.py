@@ -1,5 +1,4 @@
 import numpy
-from matplotlib import pyplot as plt
 
 import util
 from Classifiers.LogisticRegression import LogRegClass
@@ -39,89 +38,64 @@ if __name__ == '__main__':
     Z_DTR = util.Z_Score(DTR)
     Z_DTE = util.Z_Score(DTE)
 
-    util.plot_scatter(util.PCA(DTR,2), LTR)
+    util.plot_scatter(util.PCA(Z_DTR, 2), LTR)
     util.plot_hists(Z_DTR, LTR)
 
     workPoint = util.WorkPoint(0.5, 1, 10)
-
-    logMVG = MVGClassifier(DTR, LTR, workPoint.effective_prior())
-    logNaiveMVG = NaiveMVGClassifier(DTR, LTR, workPoint.effective_prior())
-    logTiedMVG = TiedMVGClassifier(DTR, LTR, workPoint.effective_prior())
-    logReg = LogRegClass(DTR, LTR, 0.00001)
+    scaled_workPoint = util.WorkPoint(workPoint.effective_prior(), 1, 1)
+    K = 5
 
     print("----- Dataset Correlation -----")
     pairs, mean = util.evaluateClassCorrelation(DTR, LTR, 0.5)
     print(f"Feature Pairs over threshold : {pairs}\nCorrelation Mean : {mean}")
 
     print("----- MVG -----")
-    logMVG.train()
-    SPost = logMVG.classify(DTE)
-    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    logMVG = MVGClassifier(DTR, LTR, scaled_workPoint.pi)
+    error, DCF = util.k_folds(DTR, LTR, K, logMVG, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- MVG With Z-Score -----")
-    logMVG = MVGClassifier(Z_DTR, LTR, workPoint.pi)
-    logMVG.train()
-    SPost = logMVG.classify(Z_DTE)
-    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    logMVG = MVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
+    error, DCF = util.k_folds(Z_DTR, LTR, K, logMVG, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- Naive MVG -----")
-    logNaiveMVG.train()
-    SPost = logNaiveMVG.classify(DTE)
-    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    logNaiveMVG = NaiveMVGClassifier(DTR, LTR, scaled_workPoint.pi)
+    error, DCF = util.k_folds(DTR, LTR, K, logNaiveMVG, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- Naive MVG with ZScore -----")
-    logNaiveMVG = NaiveMVGClassifier(Z_DTR, LTR, workPoint.effective_prior())
-    logNaiveMVG.train()
-    SPost = logNaiveMVG.classify(Z_DTE)
-    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    logNaiveMVG = NaiveMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
+    error, DCF = util.k_folds(Z_DTR, LTR, K, logNaiveMVG, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- TiedMVG -----")
-    logTiedMVG.train()
-    SPost = logTiedMVG.classify(DTE)
-    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    logTiedMVG = TiedMVGClassifier(DTR, LTR, scaled_workPoint.pi)
+    error, DCF = util.k_folds(DTR, LTR, K, logTiedMVG, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- TiedMVG with ZScore-----")
-    logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, workPoint.effective_prior())
-    logTiedMVG.train()
-    SPost = logTiedMVG.classify(Z_DTE)
-    error, DCF = util.evaluate(SPost, LTE, workPoint)
+    logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
+    error, DCF = util.k_folds(Z_DTR, LTR, K, logTiedMVG, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
-
     print("----- log Regression -----")
-    logReg.train()
-    PLabels = logReg.classify(DTE)
-    error, DCF = util.evaluate(PLabels, LTE, workPoint)
+    logReg = LogRegClass(DTR, LTR, 0.00001)
+    error, DCF = util.k_folds(DTR, LTR, K, logReg, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- log Regression with ZScore-----")
     logReg = LogRegClass(Z_DTR, LTR, 0.00001)
-    logReg.train()
-    PLabels = logReg.classify(Z_DTE)
-    error, DCF = util.evaluate(PLabels, LTE, workPoint)
+    error, DCF = util.k_folds(Z_DTR, LTR, K, logReg, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- log Regression with optimized lambdas-----")
-    logReg = LogRegClass.optimize_lambda(DTR, LTR, workPoint)
-    logReg.train()
-    PLabels = logReg.classify(DTE)
-    error, DCF = util.evaluate(PLabels, LTE, workPoint)
+    logReg = LogRegClass.optimize_lambda(DTR, LTR, scaled_workPoint)
+    error, DCF = util.k_folds(DTR, LTR, K, logReg, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF} \nLambda : {logReg.lam}")
 
     print("----- log Regression with K-Folds optimized lambdas-----")
     logReg = LogRegClass(DTR, LTR, 0.00001)
-    logReg.optimize_lambda_inplace(workPoint, starting_lambda=0.001, offset=10, num_iterations=10000, tolerance=1e-3)
-    logReg.train()
-    PLabels = logReg.classify(DTE)
-    error, DCF = util.evaluate(PLabels, LTE, workPoint)
+    logReg.optimize_lambda_inplace(scaled_workPoint, starting_lambda=0.001, offset=10, num_iterations=10000, tolerance=1e-3)
+    error, DCF = util.k_folds(DTR, LTR, K, logReg, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF} \nLambda : {logReg.lam}")
-
-    print("----- KFolds logMVG -----")
-    logMVGObj = MVGClassifier(DTR, LTR, workPoint.pi)
-    error, DCF = util.k_folds(DTR, LTR, DTR.shape[0], logMVGObj, workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}")
