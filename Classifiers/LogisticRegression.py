@@ -55,6 +55,7 @@ class LogRegClass(ClassifiersInterface):
         self.b = None
         self.w = None
         self.DTR = DTR
+        self.LTR = LTR
         self.ZTR = LTR * 2.0 - 1
         self.nSamples = DTR.shape[0]
         self.trained = False
@@ -67,11 +68,9 @@ class LogRegClass(ClassifiersInterface):
         prev_DCF = float('inf')
 
         while (num_iterations > 0):
-            logReg = LogRegClass(DTR, LTR, selectedLambda)
-            # TODO : k_folds
-            logReg.train()
-            PLabels = logReg.classify(DTR)
-            _, DCF = util.evaluate(PLabels, LTR, workPoint)
+            logRegObj = LogRegClass(DTR, LTR, selectedLambda)
+
+            _, DCF = util.k_folds(DTR, LTR, 4, logRegObj, workPoint)
 
             # Calculate change derivative
             change = prev_DCF - DCF
