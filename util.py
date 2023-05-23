@@ -200,8 +200,7 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
 
         modelObject.update_dataset(data_train_set, labels_train_set)
         modelObject.train()
-        P = modelObject.classify(data_test_set)
-        predicted = numpy.argmax(P, axis=0)
+        predicted = modelObject.classify(data_test_set)
         err_rate, DCF = evaluate(predicted, labels_test_set, workPoint)
         error_rates.append(err_rate)
         DCFs.append(DCF)

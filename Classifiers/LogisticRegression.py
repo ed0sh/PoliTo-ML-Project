@@ -29,14 +29,14 @@ class LogRegClass(ClassifiersInterface):
     def train(self):
         x0 = numpy.zeros(self.DTR.shape[0] + 1)
         xOpt, fOpt, d = scipy.optimize.fmin_l_bfgs_b(self.logreg_obj, x0=x0, approx_grad=True)
-        self.w, self.b = util.vcol(xOpt[0:self.DTR.shape[0]]), xOpt[-1]
+        self.w, self.b = util.vcol(xOpt[0:self.nSamples]), xOpt[-1]
         self.trained = True
 
     def classify(self, DTE: numpy.array) -> numpy.array:
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
         Score = numpy.dot(self.w.T, DTE) + self.b
-        PLabel = (Score > 0).astype(int)
+        PLabel = (Score > 0).astype(int).ravel()
         return PLabel
 
     def evaluate(self, DTE: numpy.array, LTE: numpy.array) -> object:
