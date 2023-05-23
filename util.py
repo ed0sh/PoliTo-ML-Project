@@ -20,6 +20,8 @@ class WorkPoint:
         self.C_fn = C_fn
         self.C_fp = C_fp
 
+    def effective_prior(self):
+        return (self.pi * self.C_fn) / (self.pi * self.C_fn + (1 - self.pi) * self.C_fp)
 
 def dataCovarianceMatrix(D: numpy.array):
     mu = (D.mean(1))

@@ -18,7 +18,7 @@ class MultivariateGaussianClass(ClassifiersInterface):
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
 
-        priors = util.vcol(numpy.array([self.prior, 1 - self.prior]))
+        priors = util.vcol(numpy.array([1 - self.prior, self.prior]))
         logPrior = numpy.log(priors)
         S = []
         for hyp in numpy.unique(self.LTR):

@@ -44,9 +44,9 @@ if __name__ == '__main__':
 
     workPoint = util.WorkPoint(0.5, 1, 10)
 
-    logMVG = MVGClassifier(DTR, LTR, workPoint.pi)
-    logNaiveMVG = NaiveMVGClassifier(DTR, LTR, workPoint.pi)
-    logTiedMVG = TiedMVGClassifier(DTR, LTR, workPoint.pi)
+    logMVG = MVGClassifier(DTR, LTR, workPoint.effective_prior())
+    logNaiveMVG = NaiveMVGClassifier(DTR, LTR, workPoint.effective_prior())
+    logTiedMVG = TiedMVGClassifier(DTR, LTR, workPoint.effective_prior())
     logReg = LogRegClass(DTR, LTR, 0.00001)
 
     print("----- Dataset Correlation -----")
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- Naive MVG with ZScore -----")
-    logNaiveMVG = NaiveMVGClassifier(Z_DTR, LTR, workPoint.pi)
+    logNaiveMVG = NaiveMVGClassifier(Z_DTR, LTR, workPoint.effective_prior())
     logNaiveMVG.train()
     SPost = logNaiveMVG.classify(Z_DTE)
     error, DCF = util.evaluate(SPost, LTE, workPoint)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     print(f"Error rate : {error} \nNormalized DCF : {DCF}")
 
     print("----- TiedMVG with ZScore-----")
-    logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, workPoint.pi)
+    logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, workPoint.effective_prior())
     logTiedMVG.train()
     SPost = logTiedMVG.classify(Z_DTE)
     error, DCF = util.evaluate(SPost, LTE, workPoint)
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     print("----- log Regression with K-Folds optimized lambdas-----")
     logReg = LogRegClass(DTR, LTR, 0.00001)
-    logReg.optimize_lambda_inplace(workPoint, starting_lambda=0.001, offset=10, num_iterations=10000)
+    logReg.optimize_lambda_inplace(workPoint, starting_lambda=0.001, offset=10, num_iterations=10000, tolerance=1e-3)
     logReg.train()
     PLabels = logReg.classify(DTE)
     error, DCF = util.evaluate(PLabels, LTE, workPoint)
