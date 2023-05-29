@@ -10,7 +10,7 @@ class MultivariateGaussianClass(ClassifiersInterface):
         self.LTR = LTR
         self.prior = prior
         self.nClasses = numpy.unique(LTR).shape[0]
-        self.nSamples = DTR.shape[0]
+        self.nFeatures = DTR.shape[0]
         self.hCls = {}
         self.trained = False
 
@@ -41,6 +41,6 @@ class MultivariateGaussianClass(ClassifiersInterface):
         self.DTR = DTR
         self.LTR = LTR
         self.nClasses = numpy.unique(LTR).shape[0]
-        self.nSamples = DTR.shape[0]
+        self.nFeatures = DTR.shape[0]
         self.hCls = {}
         self.trained = False

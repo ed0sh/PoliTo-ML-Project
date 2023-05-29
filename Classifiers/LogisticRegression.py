@@ -14,12 +14,12 @@ class LogRegClass(ClassifiersInterface):
         self.LTR = LTR
         self.ZTR = LTR * 2.0 - 1
         self.lam = l
-        self.nSamples = DTR.shape[0]
+        self.nFeatures = DTR.shape[0]
         self.trained = False
 
     def logreg_obj(self, v):
         # Compute and return the objective function value. You can retrieve all required information from self.DTR, self.LTR, self.l
-        w = util.vcol(v[0: self.nSamples])
+        w = util.vcol(v[0: self.nFeatures])
         b = v[-1]
         scores = numpy.dot(w.T, self.DTR) + b
         loss_per_sample = numpy.logaddexp(0, -self.ZTR * scores)
@@ -29,7 +29,7 @@ class LogRegClass(ClassifiersInterface):
     def train(self):
         x0 = numpy.zeros(self.DTR.shape[0] + 1)
         xOpt, fOpt, d = scipy.optimize.fmin_l_bfgs_b(self.logreg_obj, x0=x0, approx_grad=True)
-        self.w, self.b = util.vcol(xOpt[0:self.nSamples]), xOpt[-1]
+        self.w, self.b = util.vcol(xOpt[0:self.nFeatures]), xOpt[-1]
         self.trained = True
 
     def classify(self, DTE: numpy.array) -> numpy.array:
@@ -57,7 +57,7 @@ class LogRegClass(ClassifiersInterface):
         self.DTR = DTR
         self.LTR = LTR
         self.ZTR = LTR * 2.0 - 1
-        self.nSamples = DTR.shape[0]
+        self.nFeatures = DTR.shape[0]
         self.trained = False
 
     @staticmethod
