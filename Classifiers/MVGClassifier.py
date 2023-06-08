@@ -1,6 +1,6 @@
 import numpy
-import util
 from Classifiers.MultivariateGaussian import MultivariateGaussianClass
+from Utils import Util
 
 
 class MVGClassifier(MultivariateGaussianClass):
@@ -13,6 +13,6 @@ class MVGClassifier(MultivariateGaussianClass):
     def train(self):
         for label in numpy.unique(self.LTR):
             DCLS = self.DTR[:, self.LTR == label]
-            self.hCls[label] = util.dataCovarianceMatrix(DCLS)
+            self.hCls[label] = Util.dataCovarianceMatrix(DCLS)
 
         self.trained = True

@@ -1,7 +1,8 @@
 import numpy
-import util
-from Classifiers.ClassifiersInterface import ClassifiersInterface
 import scipy.special
+
+from Classifiers.ClassifiersInterface import ClassifiersInterface
+from Utils import Util
 
 
 class MultivariateGaussianClass(ClassifiersInterface):
@@ -18,17 +19,17 @@ class MultivariateGaussianClass(ClassifiersInterface):
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
 
-        priors = util.vcol(numpy.array([1 - self.prior, self.prior]))
+        priors = Util.vcol(numpy.array([1 - self.prior, self.prior]))
         logPrior = numpy.log(priors)
         S = []
         for hyp in numpy.unique(self.LTR):
             C, mu = self.hCls[hyp]
-            fcond = util.logpdf_GAU_ND(DTE, mu, C)
-            S.append(util.vrow(fcond))
+            fcond = Util.logpdf_GAU_ND(DTE, mu, C)
+            S.append(Util.vrow(fcond))
         S = numpy.vstack(S)
 
         SJoint = S + logPrior  # S is the logJoint
-        logP = SJoint - util.vrow(scipy.special.logsumexp(SJoint, 0))
+        logP = SJoint - Util.vrow(scipy.special.logsumexp(SJoint, 0))
         # logsumexp does in a numerical stable way the sum and the exp for marginal
         P = numpy.exp(logP)
         predicted = numpy.argmax(P, axis=0)

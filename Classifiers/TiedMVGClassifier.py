@@ -1,6 +1,7 @@
 import numpy
-import util
+
 from Classifiers.MultivariateGaussian import MultivariateGaussianClass
+from Utils import Util
 
 
 class TiedMVGClassifier(MultivariateGaussianClass):
@@ -13,11 +14,11 @@ class TiedMVGClassifier(MultivariateGaussianClass):
     def train(self):
         Sw = numpy.zeros((self.nFeatures, self.nFeatures))
         for i in range(0, self.nClasses):
-            Sw += util.within_class_covariance(self.DTR[:, self.LTR == i], self.DTR.size)
+            Sw += Util.within_class_covariance(self.DTR[:, self.LTR == i], self.DTR.size)
 
         for lab in numpy.unique(self.LTR):
             DCLS = self.DTR[:, self.LTR == lab]
-            _, mu = util.dataCovarianceMatrix(DCLS)
+            _, mu = Util.dataCovarianceMatrix(DCLS)
             self.hCls[lab] = (Sw, mu)
 
         self.trained = True

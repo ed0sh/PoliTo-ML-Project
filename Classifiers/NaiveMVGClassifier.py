@@ -1,6 +1,7 @@
 import numpy
-import util
+
 from Classifiers.MultivariateGaussian import MultivariateGaussianClass
+from Utils import Util
 
 
 class NaiveMVGClassifier(MultivariateGaussianClass):
@@ -13,7 +14,7 @@ class NaiveMVGClassifier(MultivariateGaussianClass):
     def train(self):
         for lab in numpy.unique(self.LTR):
             DCLS = self.DTR[:, self.LTR == lab]
-            C, mu = util.dataCovarianceMatrix(DCLS)
+            C, mu = Util.dataCovarianceMatrix(DCLS)
             ones = numpy.diag(numpy.ones(DCLS.shape[0]))
             self.hCls[lab] = (C * ones, mu)
 

@@ -1,9 +1,8 @@
 import numpy
-
-import util
 import scipy.special
 
 from Classifiers.ClassifiersInterface import ClassifiersInterface
+from Utils import Util
 
 
 class LogRegClass(ClassifiersInterface):
@@ -19,7 +18,7 @@ class LogRegClass(ClassifiersInterface):
 
     def logreg_obj(self, v):
         # Compute and return the objective function value. You can retrieve all required information from self.DTR, self.LTR, self.l
-        w = util.vcol(v[0: self.nFeatures])
+        w = Util.vcol(v[0: self.nFeatures])
         b = v[-1]
         scores = numpy.dot(w.T, self.DTR) + b
         loss_per_sample = numpy.logaddexp(0, -self.ZTR * scores)
@@ -29,7 +28,7 @@ class LogRegClass(ClassifiersInterface):
     def train(self):
         x0 = numpy.zeros(self.DTR.shape[0] + 1)
         xOpt, fOpt, d = scipy.optimize.fmin_l_bfgs_b(self.logreg_obj, x0=x0, approx_grad=True)
-        self.w, self.b = util.vcol(xOpt[0:self.nFeatures]), xOpt[-1]
+        self.w, self.b = Util.vcol(xOpt[0:self.nFeatures]), xOpt[-1]
         self.trained = True
 
     def classify(self, DTE: numpy.array) -> numpy.array:
@@ -49,7 +48,7 @@ class LogRegClass(ClassifiersInterface):
 
     def confusion_matrix(self, DTE: numpy.array, LTE: numpy.array):
         _, PLabel = self.evaluate(DTE, LTE)
-        return util.confusion_matrix(LTE, PLabel)
+        return Util.confusion_matrix(LTE, PLabel)
 
     def update_dataset(self, DTR: numpy.array, LTR: numpy.array):
         self.b = None
@@ -61,7 +60,7 @@ class LogRegClass(ClassifiersInterface):
         self.trained = False
 
     @staticmethod
-    def optimize_lambda(DTR: numpy.array, LTR: numpy.array, workPoint: util.WorkPoint, tolerance: float = 1e-5,
+    def optimize_lambda(DTR: numpy.array, LTR: numpy.array, workPoint: Util.WorkPoint, tolerance: float = 1e-5,
                         num_iterations: int = 100, starting_lambda: float = 1e-1, offset: float = 1) -> 'LogRegClass':
 
         minDCF, selectedLambda, offset = 1, starting_lambda, offset
@@ -70,7 +69,7 @@ class LogRegClass(ClassifiersInterface):
         while (num_iterations > 0):
             logRegObj = LogRegClass(DTR, LTR, selectedLambda)
 
-            _, DCF = util.k_folds(DTR, LTR, 4, logRegObj, workPoint)
+            _, DCF = Util.k_folds(DTR, LTR, 4, logRegObj, workPoint)
 
             # Calculate change derivative
             change = prev_DCF - DCF
@@ -91,7 +90,7 @@ class LogRegClass(ClassifiersInterface):
 
         return LogRegClass(DTR, LTR, selectedLambda)
 
-    def optimize_lambda_inplace(self, workPoint: util.WorkPoint, tolerance: float = 1e-5,
+    def optimize_lambda_inplace(self, workPoint: Util.WorkPoint, tolerance: float = 1e-5,
                         num_iterations: int = 100, starting_lambda: float = 1e-1, offset: float = 1):
 
         minDCF = 1
@@ -101,7 +100,7 @@ class LogRegClass(ClassifiersInterface):
 
         while num_iterations > 0:
             logRegObj = LogRegClass(self.DTR, self.LTR, selectedLambda)
-            _, DCF = util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
+            _, DCF = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
 
             # Calculate change derivative
             change = prev_DCF - DCF

@@ -1,7 +1,7 @@
 import numpy
-
-import util
 import scipy.special
+
+from Utils import Util
 
 
 class KernelSVM:
@@ -31,8 +31,8 @@ class KernelSVM:
     def RBF_kernel(self, X1, X2):
         slack_variable = self.K ** 2
         return numpy.exp(-self.gamma * (
-                util.vcol(scipy.linalg.norm(X1, axis=0) ** 2)
-                + util.vrow(scipy.linalg.norm(X2, axis=0) ** 2)
+                Util.vcol(scipy.linalg.norm(X1, axis=0) ** 2)
+                + Util.vrow(scipy.linalg.norm(X2, axis=0) ** 2)
                 - 2 * numpy.dot(X1.T, X2)
         )) + slack_variable
 
@@ -41,11 +41,11 @@ class KernelSVM:
         return ((numpy.dot(X1.T, X2) + self.c) ** self.d) + slack_variable
 
     def compute_Hh(self):
-        Lh = numpy.dot(util.vcol(self.ZTR), util.vrow(self.ZTR))
+        Lh = numpy.dot(Util.vcol(self.ZTR), Util.vrow(self.ZTR))
         self.Hh = Lh * self.kernel(self.DTR, self.DTR)
 
     def dual_obj(self, alpha: numpy.array):
-        alpha = util.vcol(alpha)
+        alpha = Util.vcol(alpha)
         loss = 0.5 * numpy.dot(alpha.T, numpy.dot(self.Hh, alpha)) - numpy.dot(alpha.T, numpy.ones((self.nSamples, 1)))
         loss_grad = numpy.dot(self.Hh, alpha) - numpy.ones((self.nSamples, 1))
 
@@ -60,7 +60,7 @@ class KernelSVM:
         return alphaOpt
 
     def classify(self, DTE):
-        S = (util.vcol(self.alpha * self.ZTR) * self.kernel(self.DTR, DTE)).sum(axis=0)
+        S = (Util.vcol(self.alpha * self.ZTR) * self.kernel(self.DTR, DTE)).sum(axis=0)
         predicted = (S > 0).astype(int)
 
         return predicted

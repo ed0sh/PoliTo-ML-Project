@@ -1,7 +1,7 @@
 import numpy
-
-import util
 import scipy.special
+
+from Utils import Util
 
 
 class LinearSVM:
@@ -19,7 +19,7 @@ class LinearSVM:
     def compute_Hh(self):
         Dh = numpy.vstack([self.DTR, self.K * numpy.ones(self.nSamples)])
         Gh = numpy.dot(Dh.T, Dh)
-        Lh = numpy.dot(util.vcol(self.ZTR), util.vrow(self.ZTR))
+        Lh = numpy.dot(Util.vcol(self.ZTR), Util.vrow(self.ZTR))
         self.Hh = Lh * Gh
 
     def primal_obj(self, wh: numpy.array):
@@ -34,9 +34,9 @@ class LinearSVM:
         return loss
 
     def dual_obj(self, alpha: numpy.array):
-        loss = 0.5 * numpy.dot(util.vrow(alpha), numpy.dot(self.Hh, util.vcol(alpha))) \
-               - numpy.dot(util.vrow(alpha), numpy.ones((self.nSamples, 1)))
-        loss_grad = numpy.dot(self.Hh, util.vcol(alpha)) - numpy.ones((self.nSamples, 1))
+        loss = 0.5 * numpy.dot(Util.vrow(alpha), numpy.dot(self.Hh, Util.vcol(alpha))) \
+               - numpy.dot(Util.vrow(alpha), numpy.ones((self.nSamples, 1)))
+        loss_grad = numpy.dot(self.Hh, Util.vcol(alpha)) - numpy.ones((self.nSamples, 1))
 
         return loss.ravel()[0], loss_grad.ravel()
 
@@ -45,7 +45,7 @@ class LinearSVM:
         bounds = [(0, self.C) for _ in range(self.nSamples)]
         alphaOpt, fOpt, d = scipy.optimize.fmin_l_bfgs_b(self.dual_obj, x0=alpha, bounds=bounds, factr=1.0)
         Dh = numpy.vstack([self.DTR, self.K * numpy.ones(self.DTR.shape[1])])
-        wh = ((util.vrow(alphaOpt) * util.vrow(self.ZTR)) * Dh).sum(axis=1)
+        wh = ((Util.vrow(alphaOpt) * Util.vrow(self.ZTR)) * Dh).sum(axis=1)
         self.wh = wh
 
         return alphaOpt, wh
