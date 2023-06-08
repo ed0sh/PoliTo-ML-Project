@@ -38,6 +38,8 @@ if __name__ == '__main__':
     Z_DTR = util.Z_Score(DTR)
     Z_DTE = util.Z_Score(DTE)
 
+    util.pair_plot(DTR, LTR)
+
     util.plot_scatter(util.PCA(Z_DTR, 2), LTR)
     util.plot_hists(Z_DTR, LTR)
 
