@@ -98,3 +98,29 @@ def plot_correlation_matrix(M: numpy.array, title: str):
     plt.title(title)
     plt.colorbar()
     plt.show()
+
+
+def plot_simple_plot(X: numpy.array, Y: numpy.array, x_label: str, y_label: str):
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    plt.plot(X, Y, color='green', marker='o', linewidth=1)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+
+    # Major ticks every 20, minor ticks every 5
+    major_ticks = numpy.arange(0, 11, 1)
+    minor_ticks = numpy.arange(0, 11, 0.5)
+    ax.set_xticks(major_ticks)
+    ax.set_xticks(minor_ticks, minor=True)
+
+    major_ticks = numpy.arange(0, 1.1, 0.2)
+    minor_ticks = numpy.arange(0, 1.1, 0.1)
+    ax.set_yticks(major_ticks)
+    ax.set_yticks(minor_ticks, minor=True)
+
+    # Or if you want different settings for the grids:
+    ax.grid(which='minor', alpha=0.2)
+    ax.grid(which='major', alpha=0.5)
+
+    plt.show()

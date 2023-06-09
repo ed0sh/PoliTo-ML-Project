@@ -31,7 +31,6 @@ def readfile(file):
 
 
 if __name__ == '__main__':
-    # Load the dataset
     # --- Load the dataset ---
     (DTR, LTR) = readfile('data/Train.csv')
     (DTE, LTE) = readfile('data/Test.csv')
@@ -41,7 +40,6 @@ if __name__ == '__main__':
 
     # --- Dataset exploration ---
     Plots.pair_plot(DTR, LTR)
-    Plots.pair_plot(Preproccessing.PCA(DTR, 2), LTR)
     reduced_DTR = Preproccessing.PCA(DTR, 2)[0]
     Plots.pair_plot(reduced_DTR, LTR)
     # TODO: plot density after LDA
@@ -53,6 +51,12 @@ if __name__ == '__main__':
     for label in numpy.unique(LTR):
         class_cov_matrix = Util.dataCorrelationMatrix(DTR[:, LTR == label])
         Plots.plot_correlation_matrix(class_cov_matrix, f"Class {label}")
+
+    expl_variance_fract = []
+    for i in range(DTR.shape[0] + 1):
+        expl_variance_fract.append(Preproccessing.PCA(DTR, i)[1])
+
+    Plots.plot_simple_plot(range(DTR.shape[0] + 1), expl_variance_fract, "PCA components", "Fraction of explained variance")
 
     workPoint = Util.WorkPoint(0.5, 1, 10)
     scaled_workPoint = Util.WorkPoint(workPoint.effective_prior(), 1, 1)
@@ -109,6 +113,7 @@ if __name__ == '__main__':
 
     print("----- log Regression with K-Folds optimized lambdas-----")
     logReg = LogRegClass(DTR, LTR, 0.00001)
-    logReg.optimize_lambda_inplace(scaled_workPoint, starting_lambda=0.001, offset=10, num_iterations=10000, tolerance=1e-3)
+    logReg.optimize_lambda_inplace(scaled_workPoint, starting_lambda=0.001, offset=10, num_iterations=10000,
+                                   tolerance=1e-3)
     error, DCF = Util.k_folds(DTR, LTR, K, logReg, scaled_workPoint)
     print(f"Error rate : {error} \nNormalized DCF : {DCF} \nLambda : {logReg.lam}")
