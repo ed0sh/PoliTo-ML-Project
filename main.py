@@ -32,14 +32,27 @@ def readfile(file):
 
 if __name__ == '__main__':
     # Load the dataset
+    # --- Load the dataset ---
     (DTR, LTR) = readfile('data/Train.csv')
     (DTE, LTE) = readfile('data/Test.csv')
 
     Z_DTR = Preproccessing.Z_Score(DTR)
     Z_DTE = Preproccessing.Z_Score(DTE)
 
+    # --- Dataset exploration ---
     Plots.pair_plot(DTR, LTR)
     Plots.pair_plot(Preproccessing.PCA(DTR, 2), LTR)
+    reduced_DTR = Preproccessing.PCA(DTR, 2)[0]
+    Plots.pair_plot(reduced_DTR, LTR)
+    # TODO: plot density after LDA
+
+    # Correlation matrices
+    dataset_cov_matrix = Util.dataCorrelationMatrix(DTR)
+    Plots.plot_correlation_matrix(dataset_cov_matrix, "Dataset")
+
+    for label in numpy.unique(LTR):
+        class_cov_matrix = Util.dataCorrelationMatrix(DTR[:, LTR == label])
+        Plots.plot_correlation_matrix(class_cov_matrix, f"Class {label}")
 
     workPoint = Util.WorkPoint(0.5, 1, 10)
     scaled_workPoint = Util.WorkPoint(workPoint.effective_prior(), 1, 1)

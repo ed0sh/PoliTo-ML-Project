@@ -91,3 +91,10 @@ def pair_plot(DTR: numpy.array, LTR: numpy.array):
                 __pair_plot_scatter(new_data, LTR, axis, i, j)
 
     plt.show()
+
+
+def plot_correlation_matrix(M: numpy.array, title: str):
+    plt.imshow(M)
+    plt.title(title)
+    plt.colorbar()
+    plt.show()
