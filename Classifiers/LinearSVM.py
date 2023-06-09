@@ -1,10 +1,11 @@
 import numpy
 import scipy.special
 
+from Classifiers.ClassifiersInterface import ClassifiersInterface
 from Utils import Util
 
 
-class LinearSVM:
+class LinearSVM(ClassifiersInterface):
     def __init__(self, DTR: numpy.array, LTR: numpy.array, C: float, K: int):
         self.DTR = DTR
         self.LTR = LTR

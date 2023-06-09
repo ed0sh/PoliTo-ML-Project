@@ -1,10 +1,11 @@
 import numpy
 import scipy.special
 
+from Classifiers.ClassifiersInterface import ClassifiersInterface
 from Utils import Util
 
 
-class KernelSVM:
+class KernelSVM(ClassifiersInterface):
     def __init__(self, DTR: numpy.array, LTR: numpy.array, C: float, K: int, d=2, c=0, gamma=1, kernel_ype="poly"):
         self.DTR = DTR
         self.LTR = LTR
