@@ -1,4 +1,5 @@
 import numpy
+import scipy.special
 from Classifiers import ClassifiersInterface
 
 
@@ -204,3 +205,126 @@ def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
     _, DCF = Compute_DCF(matrix, workPoint)
     return errRate, DCF
 
+
+def logpdf_GMM(X: numpy.array, gmm: numpy.array):
+    S = []
+    for component in gmm:
+        lod_dens = logpdf_GMM_component(X, component[1], component[2])
+        logPrior = numpy.log(component[0])
+        S.append(lod_dens + logPrior)
+    S = numpy.vstack(S)
+    logdens = scipy.special.logsumexp(S, axis=0)
+    return logdens
+
+
+def logpdf_GMM_component(X, mu, C):
+    _, log_determinant = numpy.linalg.slogdet(C)
+    firstTerm = - (numpy.shape(X)[0] * 0.5) * numpy.log(2 * numpy.pi) - log_determinant * 0.5
+    L = numpy.linalg.inv(C)
+    XC = X - mu
+    return firstTerm - 0.5 * (XC * numpy.dot(L, XC)).sum(0)
+
+
+def EM(X, gmm, psi, sigma_type=None):
+    lls = []
+    delta = 1e-6
+
+    P = E_step(X, gmm)
+    gmm = M_step(P, X, psi, sigma_type)
+    ll = logpdf_GMM(X, gmm).sum()
+    lls.append(ll)
+
+    i = 0
+
+    while i == 0 or ll - last_ll > delta:
+        i += 1
+        last_ll = ll
+        P = E_step(X, gmm)
+        gmm = M_step(P, X, psi, sigma_type)
+        ll = logpdf_GMM(X, gmm).sum()
+        lls.append(ll)
+
+    return gmm, lls, (ll/X.shape[1])
+
+
+def E_step(X, gmm):
+    SJoint = []
+    for component in gmm:
+        lod_dens = logpdf_GMM_component(X, component[1], component[2])
+        logPrior = numpy.log(component[0])
+        SJoint.append(lod_dens + logPrior)
+    SJoint = numpy.vstack(SJoint)
+    logP = SJoint - vrow(scipy.special.logsumexp(SJoint, axis=0))
+
+    P = numpy.exp(logP)
+    return P
+
+
+def M_step(P, X, psi, sigma_type=None):
+    gmm_updated = []
+    Zg_tot = P.sum()
+    Zgs = []
+
+    for g in P:
+        g = vrow(g)
+
+        Z_g = g.sum()
+        Zgs.append(Z_g)
+
+        F_g = vcol((X * g).sum(1))
+        S_g = numpy.dot((g * X), X.T)
+
+        mu_g = F_g / Z_g
+        Sigma_g = (S_g / Z_g) - numpy.dot(mu_g, mu_g.T)
+
+        if sigma_type == "diagonal":
+            Sigma_g = Sigma_g * numpy.eye(Sigma_g.shape[1])
+
+        Sigma_g = eigen_constraint(Sigma_g, psi)
+
+        w_g = Z_g / Zg_tot
+        gmm_updated.append((w_g, mu_g, Sigma_g))
+
+    if sigma_type == "tied":
+        Sigma_tied = numpy.zeros(gmm_updated[0][2].shape)
+        for i, gmm in enumerate(gmm_updated):
+            Sigma_tied += (Zgs[i] * gmm[2])
+
+        for i, gmm in enumerate(gmm_updated):
+            Sigma_tied = (1/X.shape[1]) * Sigma_tied
+            Sigma_tied = eigen_constraint(Sigma_tied, psi)
+            gmm_updated[i] = (gmm[0], gmm[1], Sigma_tied)
+
+    return gmm_updated
+
+
+def LBG(X, gmm, alpha, max_g, psi, sigma_type=None):
+    g = 1
+    gmm = [(gmm[0][0], gmm[0][1], eigen_constraint(gmm[0][2], psi))]
+
+    ll_mean = 0
+    all_lls = []
+
+    while g < max_g:
+        new_gmm = []
+        for gmm_comp in gmm:
+            w, mu, Sigma = gmm_comp
+
+            U, s, Vh = numpy.linalg.svd(Sigma)
+            d = U[:, 0:1] * s[0] ** 0.5 * alpha
+
+            new_gmm.append((w/2, mu + d, Sigma))
+            new_gmm.append((w/2, mu - d, Sigma))
+
+        gmm, lls, ll_mean = EM(X, new_gmm, psi, sigma_type)
+        g *= 2
+        all_lls.extend(lls)
+
+    return gmm, all_lls, ll_mean
+
+
+def eigen_constraint(Sigma, psi):
+    U, s, _ = numpy.linalg.svd(Sigma)
+    s[s < psi] = psi
+    Sigma = numpy.dot(U, vcol(s) * U.T)
+    return Sigma
