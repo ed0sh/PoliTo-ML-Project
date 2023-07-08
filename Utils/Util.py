@@ -270,9 +270,9 @@ def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
 
 def logpdf_GMM(X: numpy.array, gmm: numpy.array):
     S = []
-    for component in gmm:
-        lod_dens = logpdf_GMM_component(X, component[1], component[2])
-        logPrior = numpy.log(component[0])
+    for w, mu, C in gmm:
+        lod_dens = logpdf_GMM_component(X, mu, C)
+        logPrior = numpy.log(w)
         S.append(lod_dens + logPrior)
     S = numpy.vstack(S)
     logdens = scipy.special.logsumexp(S, axis=0)
@@ -311,9 +311,9 @@ def EM(X, gmm, psi, sigma_type=None):
 
 def E_step(X, gmm):
     SJoint = []
-    for component in gmm:
-        lod_dens = logpdf_GMM_component(X, component[1], component[2])
-        logPrior = numpy.log(component[0])
+    for w, mu, C in gmm:
+        lod_dens = logpdf_GMM_component(X, mu, C)
+        logPrior = numpy.log(w)
         SJoint.append(lod_dens + logPrior)
     SJoint = numpy.vstack(SJoint)
     logP = SJoint - vrow(scipy.special.logsumexp(SJoint, axis=0))
@@ -348,14 +348,9 @@ def M_step(P, X, psi, sigma_type=None):
         gmm_updated.append((w_g, mu_g, Sigma_g))
 
     if sigma_type == "tied":
-        Sigma_tied = numpy.zeros(gmm_updated[0][2].shape)
-        for i, gmm in enumerate(gmm_updated):
-            Sigma_tied += (Zgs[i] * gmm[2])
-
-        for i, gmm in enumerate(gmm_updated):
-            Sigma_tied = (1/X.shape[1]) * Sigma_tied
-            Sigma_tied = eigen_constraint(Sigma_tied, psi)
-            gmm_updated[i] = (gmm[0], gmm[1], Sigma_tied)
+        Sigma_tied = sum([w * C for w, mu, C in gmm_updated])
+        Sigma_tied = eigen_constraint(Sigma_tied, psi)
+        gmm_updated = [(w, mu, Sigma_tied) for w, mu, _ in gmm_updated]
 
     return gmm_updated
 
