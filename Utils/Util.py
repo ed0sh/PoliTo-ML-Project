@@ -1,3 +1,5 @@
+import math
+
 import numpy
 import scipy.special
 from Classifiers import ClassifiersInterface
@@ -109,6 +111,30 @@ def Compute_DCF(matrix: numpy.array, workPoint: WorkPoint):
     DCF = Compute_Anormalized_DCF(matrix, workPoint.pi, workPoint.C_fn, workPoint.C_fp)
     nDCF = Compute_Normalized_DCF(DCF, workPoint.pi, workPoint.C_fn, workPoint.C_fp)
     return DCF, nDCF
+
+
+def compute_minDCF(LTE,SPost,workPoint):
+    idx = numpy.argsort(SPost)
+    sortL = LTE[idx]
+    MinDCF = 1
+    startingMatrix = confusion_matrix(LTE, Discriminant_ratio(-math.inf, SPost))
+    for val in sortL:
+        if(val == 0):
+            startingMatrix[0][0] = startingMatrix[0][0] + 1
+            startingMatrix[1][0] = startingMatrix[1][0] - 1
+        else:
+            startingMatrix[0][1] = startingMatrix[0][1] + 1
+            startingMatrix[1][1] = startingMatrix[1][1] - 1
+        _, tempDCF = Compute_DCF(startingMatrix, workPoint.pi, workPoint.C_fn, workPoint.C_fp)
+        if (tempDCF < MinDCF):
+            MinDCF = tempDCF
+    return MinDCF
+
+def Discriminant_ratio(threshold,SPost):
+    res = numpy.copy(SPost)
+    res[SPost > threshold] = 1
+    res[SPost <= threshold] = 0
+    return (SPost > threshold).astype(int)
 
 
 def logpdf_GAU_ND(X: numpy.array, mu: float, C: numpy.array):
