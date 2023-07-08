@@ -114,12 +114,11 @@ def plot_simple_plot(X: numpy.array, Y: numpy.array, x_label: str, y_label: str)
     ax.set_xticks(major_ticks)
     ax.set_xticks(minor_ticks, minor=True)
 
-    major_ticks = numpy.arange(0, 1.1, 0.2)
-    minor_ticks = numpy.arange(0, 1.1, 0.1)
+    major_ticks = numpy.arange(0, 1.1, 0.1)
+    minor_ticks = numpy.arange(0, 1.1, 0.05)
     ax.set_yticks(major_ticks)
     ax.set_yticks(minor_ticks, minor=True)
 
-    # Or if you want different settings for the grids:
     ax.grid(which='minor', alpha=0.2)
     ax.grid(which='major', alpha=0.5)
 
