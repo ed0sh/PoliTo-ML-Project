@@ -78,7 +78,7 @@ def __pair_plot_scatter(DTR: numpy.array, LTR: numpy.array, axis, i, j):
 def pair_plot(DTR: numpy.array, LTR: numpy.array):
     feature_count = DTR.shape[0]
 
-    fig, axis = plt.subplots(nrows=feature_count, ncols=feature_count)
+    fig, axis = plt.subplots(nrows=feature_count, ncols=feature_count, squeeze=False)
     fig.set_size_inches(feature_count * 4, feature_count * 4)
 
     # Iterate through features to plot pairwise.

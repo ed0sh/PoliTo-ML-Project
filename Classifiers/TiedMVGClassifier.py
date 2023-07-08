@@ -12,9 +12,7 @@ class TiedMVGClassifier(MultivariateGaussianClass):
         return super().classify(DTE)
 
     def train(self):
-        Sw = numpy.zeros((self.nFeatures, self.nFeatures))
-        for i in range(0, self.nClasses):
-            Sw += Util.within_class_covariance(self.DTR[:, self.LTR == i], self.DTR.size)
+        Sw = Util.within_classes_covariance_matrix(self.DTR, self.LTR)
 
         for lab in numpy.unique(self.LTR):
             DCLS = self.DTR[:, self.LTR == lab]

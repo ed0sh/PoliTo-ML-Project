@@ -56,6 +56,42 @@ def within_class_covariance(D: numpy.array, N: int):
     return dataCovarianceMatrix(D)[0] * D.size / N
 
 
+def within_classes_covariance_matrix(D, L):
+    Sw = numpy.zeros((D.shape[0], D.shape[0]))
+    for c in numpy.unique(L):
+        Sw += within_class_covariance(D[:, L == c], D.shape[1])
+
+    return Sw / D.shape[0]
+
+
+def between_classes_covariance_matrix(D, L):
+    Sb = numpy.zeros((D.shape[0], D.shape[0]))
+    mu = vcol(D.mean(axis=1))
+
+    for c in numpy.unique(L):
+        Dc = D[:, L == c]
+        muc = vcol(Dc.mean(axis=1))
+        mu_diff = muc - mu
+        Sb += numpy.dot(mu_diff, mu_diff.T) * Dc.shape[1]
+
+    return Sb / D.shape[1]
+
+
+def generalized_eig_problem(Sb, Sw, m):
+    s, U = scipy.linalg.eigh(Sb, Sw)
+    return U[:, ::-1][:, 0:m]
+
+
+def joint_diagonalizaton(Sb, Sw, m):
+    Uw, sw, _ = numpy.linalg.svd(Sw)
+    P1 = numpy.dot(Uw * vrow(1.0 / (sw ** 0.5)), Uw.T)
+    Sbt = numpy.dot(P1, numpy.dot(Sb, P1.T))
+
+    Ub, _, _ = numpy.linalg.svd(Sbt)
+    P2 = Ub[:, 0:m]
+    return numpy.dot(P1.T, P2)
+
+
 def Compute_Anormalized_DCF(matrix: numpy.array, pi: float, C_fn: float, C_fp: float):
     FNR = matrix[0][1] / (matrix[0][1] + matrix[1][1])
     FPR = matrix[1][0] / (matrix[0][0] + matrix[1][0])

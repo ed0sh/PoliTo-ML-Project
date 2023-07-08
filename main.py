@@ -24,8 +24,11 @@ def readfile(file):
                 label = hLabels[name]
                 DList.append(attrs)
                 labelsList.append(label)
-            except:
-                pass
+            except Exception as e:
+                print("Error while reading the file!")
+                print(e)
+                return
+
         D, L = numpy.hstack(DList), numpy.array(labelsList, dtype=numpy.int32)
         return D, L
 
@@ -39,10 +42,15 @@ if __name__ == '__main__':
     Z_DTE = Preproccessing.Z_Score(DTE)
 
     # --- Dataset exploration ---
+
+    # PCA
     Plots.pair_plot(DTR, LTR)
     reduced_DTR = Preproccessing.PCA(DTR, 2)[0]
     Plots.pair_plot(reduced_DTR, LTR)
-    # TODO: plot density after LDA
+
+    # LDA
+    reduced_DTR_LDA = Preproccessing.LDA(DTR, LTR, 1)[0]
+    Plots.pair_plot(Util.vrow(reduced_DTR_LDA), LTR)
 
     # Correlation matrices
     dataset_cov_matrix = Util.dataCorrelationMatrix(DTR)
