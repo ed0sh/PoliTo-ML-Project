@@ -26,4 +26,3 @@ class GMM:
     def train(self):
         self.gmm, _, _ = Util.LBG(self.DTR, self.gmm, self.alpha, self.max_g, self.psi, self.sigma_type)
         self.trained = True
-

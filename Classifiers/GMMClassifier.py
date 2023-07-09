@@ -13,7 +13,7 @@ class GMMClassifier(ClassifiersInterface):
         self.max_g = max_g
         self.sigma_type = sigma_type
         self.trained = False
-
+        self.scores = None
         self.gmms = []
         for c in numpy.unique(self.LTR):
             GMM_c = GMM(self.DTR[:, self.LTR == c], self.alpha, self.psi, self.max_g, self.sigma_type)

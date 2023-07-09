@@ -21,17 +21,24 @@ class MultivariateGaussianClass(ClassifiersInterface):
 
         priors = Util.vcol(numpy.array([1 - self.prior, self.prior]))
         logPrior = numpy.log(priors)
+        classes = numpy.unique(self.LTR)
         S = []
-        for hyp in numpy.unique(self.LTR):
+        for hyp in classes:
             C, mu = self.hCls[hyp]
             fcond = Util.logpdf_GAU_ND(DTE, mu, C)
             S.append(Util.vrow(fcond))
+
         S = numpy.vstack(S)
 
         SJoint = S + logPrior  # S is the logJoint
         logP = SJoint - Util.vrow(scipy.special.logsumexp(SJoint, 0))
         # logsumexp does in a numerical stable way the sum and the exp for marginal
+
+        if classes.size == 2:
+            self.scores = logP[1] - logP[0]
+
         P = numpy.exp(logP)
+
         predicted = numpy.argmax(P, axis=0)
         return predicted
 
@@ -45,3 +52,6 @@ class MultivariateGaussianClass(ClassifiersInterface):
         self.nFeatures = DTR.shape[0]
         self.hCls = {}
         self.trained = False
+
+    def get_scores(self) -> numpy.array:
+        return super().get_scores()

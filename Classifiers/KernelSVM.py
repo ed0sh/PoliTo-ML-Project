@@ -67,6 +67,7 @@ class KernelSVM(ClassifiersInterface):
             raise RuntimeError('Classifier is not trained yet')
 
         S = (Util.vcol(self.alpha * self.ZTR) * self.kernel(self.DTR, DTE)).sum(axis=0)
+        self.scores = S
         predicted = (S > 0).astype(int)
 
         return predicted

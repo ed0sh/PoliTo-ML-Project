@@ -35,20 +35,9 @@ class LogRegClass(ClassifiersInterface):
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
         Score = numpy.dot(self.w.T, DTE) + self.b
+        self.scores = Score
         PLabel = (Score > 0).astype(int).ravel()
         return PLabel
-
-    def evaluate(self, DTE: numpy.array, LTE: numpy.array) -> object:
-        if not self.trained:
-            raise RuntimeError('Classifier is not trained yet')
-        Score = numpy.dot(self.w.T, DTE) + self.b
-        PLabel = (Score > 0).astype(int)
-        Error = ((LTE != PLabel).astype(int).sum() / DTE.shape[1]) * 100
-        return Error, PLabel
-
-    def confusion_matrix(self, DTE: numpy.array, LTE: numpy.array):
-        _, PLabel = self.evaluate(DTE, LTE)
-        return Util.confusion_matrix(LTE, PLabel)
 
     def update_dataset(self, DTR: numpy.array, LTR: numpy.array):
         self.b = None
@@ -69,7 +58,7 @@ class LogRegClass(ClassifiersInterface):
         while (num_iterations > 0):
             logRegObj = LogRegClass(DTR, LTR, selectedLambda)
 
-            _, DCF = Util.k_folds(DTR, LTR, 4, logRegObj, workPoint)
+            _, DCF, _ = Util.k_folds(DTR, LTR, 4, logRegObj, workPoint)
 
             # Calculate change derivative
             change = prev_DCF - DCF
@@ -100,7 +89,7 @@ class LogRegClass(ClassifiersInterface):
 
         while num_iterations > 0:
             logRegObj = LogRegClass(self.DTR, self.LTR, selectedLambda)
-            _, DCF = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
+            _, DCF,_ = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
 
             # Calculate change derivative
             change = prev_DCF - DCF

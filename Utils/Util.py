@@ -114,18 +114,18 @@ def Compute_DCF(matrix: numpy.array, workPoint: WorkPoint):
 
 
 def compute_minDCF(LTE,SPost,workPoint):
-    idx = numpy.argsort(SPost)
+    idx = numpy.argsort(SPost.ravel())
     sortL = LTE[idx]
-    MinDCF = 1
+    MinDCF = 100
     startingMatrix = confusion_matrix(LTE, Discriminant_ratio(-math.inf, SPost))
     for val in sortL:
-        if(val == 0):
+        if val == 0 :
             startingMatrix[0][0] = startingMatrix[0][0] + 1
             startingMatrix[1][0] = startingMatrix[1][0] - 1
         else:
             startingMatrix[0][1] = startingMatrix[0][1] + 1
             startingMatrix[1][1] = startingMatrix[1][1] - 1
-        _, tempDCF = Compute_DCF(startingMatrix, workPoint.pi, workPoint.C_fn, workPoint.C_fp)
+        _, tempDCF = Compute_DCF(startingMatrix, workPoint)
         if (tempDCF < MinDCF):
             MinDCF = tempDCF
     return MinDCF
@@ -235,7 +235,11 @@ def split_k_folds(DTR: numpy.array, LTR: numpy.array, K: int, seed=0):
 def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: ClassifiersInterface, workPoint: WorkPoint):
     d_folds, l_folds = split_k_folds(DTR, LTR, K)
     DCFs = []
+    minDCFs = []
     error_rates = []
+    scores = []
+    predictions = []
+    labels = []
     for i in range(len(d_folds)):
         data_test_set = d_folds[i]
         labels_test_set = l_folds[i]
@@ -255,10 +259,16 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
         err_rate, DCF = evaluate(predicted, labels_test_set, workPoint)
         error_rates.append(err_rate)
         DCFs.append(DCF)
+        scores.extend(modelObject.get_scores())
+        predictions.extend(predicted)
+        labels.extend(labels_test_set)
+        minDCFs.append(compute_minDCF(labels_test_set,modelObject.get_scores(),workPoint))
 
     mean_err_rate = numpy.array(error_rates).mean()
     mean_DCF = numpy.array(DCFs).mean()
-    return mean_err_rate, mean_DCF
+    minCDF = numpy.array(minDCFs).mean()
+    #minDCF2 = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint) #TODO: check if this is correct
+    return mean_err_rate, mean_DCF , minCDF
 
 
 def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
