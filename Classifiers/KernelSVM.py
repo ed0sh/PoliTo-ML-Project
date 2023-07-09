@@ -28,6 +28,7 @@ class KernelSVM(ClassifiersInterface):
 
         self.Hh = None
         self.alpha = None
+        self.trained = False
 
     def RBF_kernel(self, X1, X2):
         slack_variable = self.K ** 2
@@ -57,11 +58,27 @@ class KernelSVM(ClassifiersInterface):
         bounds = [(0, self.C) for _ in range(self.nSamples)]
         alphaOpt, _, _ = scipy.optimize.fmin_l_bfgs_b(self.dual_obj, x0=alpha, bounds=bounds, factr=1.0)
         self.alpha = alphaOpt
+        self.trained = True
 
         return alphaOpt
 
     def classify(self, DTE):
+        if not self.trained:
+            raise RuntimeError('Classifier is not trained yet')
+
         S = (Util.vcol(self.alpha * self.ZTR) * self.kernel(self.DTR, DTE)).sum(axis=0)
         predicted = (S > 0).astype(int)
 
         return predicted
+
+    def update_dataset(self, DTR: numpy.array, LTR: numpy.array):
+        self.DTR = DTR
+        self.LTR = LTR
+
+        self.ZTR = LTR * 2.0 - 1
+        self.nFeatures = DTR.shape[0]
+        self.nSamples = DTR.shape[1]
+
+        self.Hh = None
+        self.alpha = None
+        self.trained = False

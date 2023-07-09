@@ -271,20 +271,12 @@ def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
 def logpdf_GMM(X: numpy.array, gmm: numpy.array):
     S = []
     for w, mu, C in gmm:
-        lod_dens = logpdf_GMM_component(X, mu, C)
+        lod_dens = logpdf_GAU_ND(X, mu, C)
         logPrior = numpy.log(w)
         S.append(lod_dens + logPrior)
     S = numpy.vstack(S)
     logdens = scipy.special.logsumexp(S, axis=0)
     return logdens
-
-
-def logpdf_GMM_component(X, mu, C):
-    _, log_determinant = numpy.linalg.slogdet(C)
-    firstTerm = - (numpy.shape(X)[0] * 0.5) * numpy.log(2 * numpy.pi) - log_determinant * 0.5
-    L = numpy.linalg.inv(C)
-    XC = X - mu
-    return firstTerm - 0.5 * (XC * numpy.dot(L, XC)).sum(0)
 
 
 def EM(X, gmm, psi, sigma_type=None):
@@ -312,7 +304,7 @@ def EM(X, gmm, psi, sigma_type=None):
 def E_step(X, gmm):
     SJoint = []
     for w, mu, C in gmm:
-        lod_dens = logpdf_GMM_component(X, mu, C)
+        lod_dens = logpdf_GAU_ND(X, mu, C)
         logPrior = numpy.log(w)
         SJoint.append(lod_dens + logPrior)
     SJoint = numpy.vstack(SJoint)

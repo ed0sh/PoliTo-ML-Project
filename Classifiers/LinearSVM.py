@@ -16,6 +16,7 @@ class LinearSVM(ClassifiersInterface):
         self.nSamples = DTR.shape[1]
         self.Hh = None
         self.wh = None
+        self.trained = False
 
     def compute_Hh(self):
         Dh = numpy.vstack([self.DTR, self.K * numpy.ones(self.nSamples)])
@@ -48,12 +49,26 @@ class LinearSVM(ClassifiersInterface):
         Dh = numpy.vstack([self.DTR, self.K * numpy.ones(self.DTR.shape[1])])
         wh = ((Util.vrow(alphaOpt) * Util.vrow(self.ZTR)) * Dh).sum(axis=1)
         self.wh = wh
+        self.trained = True
 
         return alphaOpt, wh
 
     def classify(self, DTE):
+        if not self.trained:
+            raise RuntimeError('Classifier is not trained yet')
+
         Dth = numpy.vstack([DTE, self.K * numpy.ones(DTE.shape[1])])
         S = numpy.dot(self.wh.T, Dth)
         predicted = (S > 0).astype(int)
 
         return predicted
+
+    def update_dataset(self, DTR: numpy.array, LTR: numpy.array):
+        self.DTR = DTR
+        self.LTR = LTR
+        self.ZTR = LTR * 2.0 - 1
+        self.nFeatures = DTR.shape[0]
+        self.nSamples = DTR.shape[1]
+        self.Hh = None
+        self.wh = None
+        self.trained = False

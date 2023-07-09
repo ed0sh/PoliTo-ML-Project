@@ -60,12 +60,15 @@ if __name__ == '__main__':
         class_cov_matrix = Util.dataCorrelationMatrix(DTR[:, LTR == label])
         Plots.plot_correlation_matrix(class_cov_matrix, f"Class {label}")
 
+    # Choosing the number of PCA features
     expl_variance_fract = []
     for i in range(DTR.shape[0] + 1):
         expl_variance_fract.append(Preproccessing.PCA(DTR, i)[1])
 
     Plots.plot_simple_plot(range(DTR.shape[0] + 1), expl_variance_fract, "PCA components", "Fraction of explained variance")
+    # Acceptable values are 7, 8 and 9 as they retain at least 90% of the dataset variance
 
+    # Set the application-specific working point
     workPoint = Util.WorkPoint(0.5, 1, 10)
     scaled_workPoint = Util.WorkPoint(workPoint.effective_prior(), 1, 1)
     K = 5
@@ -74,6 +77,7 @@ if __name__ == '__main__':
     pairs, mean = Util.evaluateClassCorrelation(DTR, LTR, 0.5)
     print(f"Feature Pairs over threshold : {pairs}\nCorrelation Mean : {mean}")
 
+    # Model evaluation
     print("----- MVG -----")
     logMVG = MVGClassifier(DTR, LTR, scaled_workPoint.pi)
     error, DCF = Util.k_folds(DTR, LTR, K, logMVG, scaled_workPoint)
