@@ -35,7 +35,7 @@ class LogRegClass(ClassifiersInterface):
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
         Score = numpy.dot(self.w.T, DTE) + self.b
-        self.scores = Score
+        self.scores = Score.ravel()
         PLabel = (Score > 0).astype(int).ravel()
         return PLabel
 

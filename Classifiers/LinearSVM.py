@@ -59,7 +59,7 @@ class LinearSVM(ClassifiersInterface):
 
         Dth = numpy.vstack([DTE, self.K * numpy.ones(DTE.shape[1])])
         S = numpy.dot(self.wh.T, Dth)
-        self.scores = S
+        self.scores = S.ravel()
         predicted = (S > 0).astype(int)
 
         return predicted

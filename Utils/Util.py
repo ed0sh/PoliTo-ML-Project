@@ -266,9 +266,9 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
 
     mean_err_rate = numpy.array(error_rates).mean()
     mean_DCF = numpy.array(DCFs).mean()
-    minCDF = numpy.array(minDCFs).mean()
-    #minDCF2 = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint) #TODO: check if this is correct
-    return mean_err_rate, mean_DCF , minCDF
+    minDCF_ = numpy.array(minDCFs).min()
+    minDCF = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint) #TODO: check if this is correct
+    return mean_err_rate, mean_DCF , minDCF
 
 
 def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
