@@ -1,6 +1,7 @@
 import numpy
 
 from Utils import Plots, Preproccessing, Util
+from Classifiers.ClassifiersInterface import ClassifiersInterface
 from Classifiers.LogisticRegression import LogRegClass
 from Classifiers.MVGClassifier import MVGClassifier
 from Classifiers.NaiveMVGClassifier import NaiveMVGClassifier
@@ -31,6 +32,21 @@ def readfile(file):
 
         D, L = numpy.hstack(DList), numpy.array(labelsList, dtype=numpy.int32)
         return D, L
+
+
+def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int, modelObject: ClassifiersInterface, scaled_workPoint: Util.WorkPoint):
+    print("PCA\t|\tminDCF")
+    for m in PCA_values:
+        reduced_DTR = DTR
+        if m is not None:
+            reduced_DTR = Preproccessing.PCA(DTR, m)[0]
+        else:
+            m = "No"
+
+        modelObject.update_dataset(reduced_DTR, LTR)
+        error, DCF, minDCF = Util.k_folds(reduced_DTR, LTR, K, modelObject, scaled_workPoint)
+        minDCF = round(minDCF, 3)
+        print(f"{m}\t|\t{minDCF}")
 
 
 if __name__ == '__main__':
@@ -67,6 +83,7 @@ if __name__ == '__main__':
 
     Plots.plot_simple_plot(range(DTR.shape[0] + 1), expl_variance_fract, "PCA components", "Fraction of explained variance")
     # Acceptable values are 7, 8 and 9 as they retain at least 90% of the dataset variance
+    PCA_values = [None, 9, 8, 7]
 
     # Set the application-specific working point
     workPoint = Util.WorkPoint(0.5, 1, 10)
@@ -78,54 +95,55 @@ if __name__ == '__main__':
     print(f"Feature Pairs over threshold : {pairs}\nCorrelation Mean : {mean}")
 
     # Model evaluation
+
     print("----- MVG -----")
     logMVG = MVGClassifier(DTR, LTR, scaled_workPoint.pi)
-    error, DCF , minDCF = Util.k_folds(DTR, LTR, K, logMVG, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    evaluate_model(DTR, LTR, PCA_values, K, logMVG, scaled_workPoint)
 
-    print("----- MVG With Z-Score -----")
-    logMVG = MVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
-    error, DCF , minDCF = Util.k_folds(Z_DTR, LTR, K, logMVG, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    # The best minDCF value was given by m = 7 => we try also 6 and 5
+    evaluate_model(DTR, LTR, [6, 5], K, logMVG, scaled_workPoint)
+    # No, we can discard them
+
+    # FIXME: Il prof non ha messo lo z-score su MVG (@ale dimmi tu)
+    # print("----- MVG With Z-Score -----")
+    # logMVG = MVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
+    # error, DCF, minDCF = Util.k_folds(Z_DTR, LTR, K, logMVG, scaled_workPoint)
+    # print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
 
     print("----- Naive MVG -----")
     logNaiveMVG = NaiveMVGClassifier(DTR, LTR, scaled_workPoint.pi)
-    error, DCF , minDCF = Util.k_folds(DTR, LTR, K, logNaiveMVG, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    evaluate_model(DTR, LTR, PCA_values, K, logNaiveMVG, scaled_workPoint)
 
-    print("----- Naive MVG with ZScore -----")
-    logNaiveMVG = NaiveMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
-    error, DCF , minDCF = Util.k_folds(Z_DTR, LTR, K, logNaiveMVG, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    # FIXME: Il prof non ha messo lo z-score su MVG (@ale dimmi tu)
+    # print("----- Naive MVG with ZScore -----")
+    # logNaiveMVG = NaiveMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
+    # error, DCF, minDCF = Util.k_folds(Z_DTR, LTR, K, logNaiveMVG, scaled_workPoint)
+    # print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
 
     print("----- TiedMVG -----")
     logTiedMVG = TiedMVGClassifier(DTR, LTR, scaled_workPoint.pi)
-    error, DCF , minDCF = Util.k_folds(DTR, LTR, K, logTiedMVG, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    evaluate_model(DTR, LTR, PCA_values, K, logTiedMVG, scaled_workPoint)
 
-    print("----- TiedMVG with ZScore-----")
-    logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
-    error, DCF , minDCF = Util.k_folds(Z_DTR, LTR, K, logTiedMVG, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    # FIXME: Il prof non ha messo lo z-score su MVG (@ale dimmi tu)
+    # print("----- TiedMVG with ZScore-----")
+    # logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
+    # error, DCF, minDCF = Util.k_folds(Z_DTR, LTR, K, logTiedMVG, scaled_workPoint)
+    # print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
 
     print("----- log Regression -----")
     logReg = LogRegClass(DTR, LTR, 0.00001)
-    error, DCF , minDCF = Util.k_folds(DTR, LTR, K, logReg, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
 
     print("----- log Regression with ZScore-----")
     logReg = LogRegClass(Z_DTR, LTR, 0.00001)
-    error, DCF , minDCF = Util.k_folds(Z_DTR, LTR, K, logReg, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    evaluate_model(Z_DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
 
     print("----- log Regression with optimized lambdas-----")
     logReg = LogRegClass.optimize_lambda(DTR, LTR, scaled_workPoint)
-    error, DCF , minDCF = Util.k_folds(DTR, LTR, K, logReg, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF} \nLambda : {logReg.lam}")
+    evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
 
-    print("----- log Regression with K-Folds optimized lambdas-----")
+    print("----- log Regression with inplace optimized lambdas-----")
     logReg = LogRegClass(DTR, LTR, 0.00001)
     logReg.optimize_lambda_inplace(scaled_workPoint, starting_lambda=0.001, offset=10, num_iterations=10000,
                                    tolerance=1e-3)
-    error, DCF , minDCF = Util.k_folds(DTR, LTR, K, logReg, scaled_workPoint)
-    print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF} \nLambda : {logReg.lam}")
+    evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
