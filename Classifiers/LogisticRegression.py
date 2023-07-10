@@ -110,3 +110,12 @@ class LogRegClass(ClassifiersInterface):
             num_iterations -= 1
 
         self.lam = selectedLambda
+
+    def feature_expansion_inplace(self):
+        Phi = []
+        for i in range(self.DTR.shape[1]):
+            x = Util.vcol(self.DTR[:, i])
+            phi = numpy.vstack([Util.vcol(numpy.dot(x, x.T)), x])
+            Phi.append(phi)
+        Phi = numpy.hstack(Phi)
+        self.DTR = Phi
