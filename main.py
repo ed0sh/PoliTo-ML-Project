@@ -112,6 +112,7 @@ if __name__ == '__main__':
 
     print("----- Naive MVG -----")
     logNaiveMVG = NaiveMVGClassifier(DTR, LTR, scaled_workPoint.pi)
+    evaluate_model(DTR, LTR, [10], K, logNaiveMVG, scaled_workPoint)
     evaluate_model(DTR, LTR, PCA_values, K, logNaiveMVG, scaled_workPoint)
 
     # FIXME: Il prof non ha messo lo z-score su MVG (@ale dimmi tu)
