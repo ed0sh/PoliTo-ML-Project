@@ -52,23 +52,23 @@ class LogRegClass(ClassifiersInterface):
     def optimize_lambda(DTR: numpy.array, LTR: numpy.array, workPoint: Util.WorkPoint, tolerance: float = 1e-5,
                         num_iterations: int = 100, starting_lambda: float = 1e-1, offset: float = 1) -> 'LogRegClass':
 
-        minDCF, selectedLambda, offset = 1, starting_lambda, offset
+        bestMinDCF, selectedLambda, offset = 1, starting_lambda, offset
         prev_DCF = float('inf')
 
         while (num_iterations > 0):
             logRegObj = LogRegClass(DTR, LTR, selectedLambda)
 
-            _, DCF, _ = Util.k_folds(DTR, LTR, 4, logRegObj, workPoint)
+            _, _, minDCF = Util.k_folds(DTR, LTR, 4, logRegObj, workPoint)
 
             # Calculate change derivative
-            change = prev_DCF - DCF
-            prev_DCF = DCF
+            change = prev_DCF - minDCF
+            prev_DCF = minDCF
 
             if numpy.abs(change) < tolerance:
                 break
 
-            if DCF < minDCF:
-                minDCF = DCF
+            if minDCF < bestMinDCF:
+                bestMinDCF = minDCF
 
             if change > 0:
                 selectedLambda = selectedLambda + offset
@@ -82,24 +82,24 @@ class LogRegClass(ClassifiersInterface):
     def optimize_lambda_inplace(self, workPoint: Util.WorkPoint, tolerance: float = 1e-5,
                         num_iterations: int = 100, starting_lambda: float = 1e-1, offset: float = 1):
 
-        minDCF = 1
+        bestMinDCF = 1
         selectedLambda = starting_lambda
         offset = offset
         prev_DCF = float('inf')
 
         while num_iterations > 0:
             logRegObj = LogRegClass(self.DTR, self.LTR, selectedLambda)
-            _, DCF,_ = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
+            _, _, minDCF = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
 
             # Calculate change derivative
-            change = prev_DCF - DCF
-            prev_DCF = DCF
+            change = prev_DCF - minDCF
+            prev_DCF = minDCF
 
             if numpy.abs(offset) < tolerance:
                 break
 
-            if DCF < minDCF:
-                minDCF = DCF
+            if minDCF < bestMinDCF:
+                bestMinDCF = minDCF
 
             if change > 0:
                 selectedLambda = selectedLambda + offset
