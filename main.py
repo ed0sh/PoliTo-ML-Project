@@ -141,10 +141,16 @@ if __name__ == '__main__':
 
     print("----- log Regression with optimized lambdas-----")
     logReg = LogRegClass.optimize_lambda(DTR, LTR, scaled_workPoint)
+    logReg = LogRegClass.create_with_optimized_lambda(DTR, LTR, scaled_workPoint)
     evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    print(f"Selected lambda: {logReg.lam}")
 
     print("----- log Regression with inplace optimized lambdas-----")
     logReg = LogRegClass(DTR, LTR, 0.00001)
     logReg.optimize_lambda_inplace(scaled_workPoint, starting_lambda=0.001, offset=10, num_iterations=10000,
                                    tolerance=1e-3)
     evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    print("----- log Regression with ZScore and inplace optimized lambdas-----")
+    logReg = LogRegClass.create_with_optimized_lambda(Z_DTR, LTR, scaled_workPoint)
+    evaluate_model(Z_DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    print(f"Selected lambda: {logReg.lam}")
