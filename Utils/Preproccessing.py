@@ -31,8 +31,9 @@ def LDA(D: numpy.array, L: numpy.array, m: int):
 
 
 def Z_Score(D: numpy.array):
-    for i in range(D.shape[0]):
-        D[i] = (D[i] - D[i].mean()) / D[i].std()
-    return D
+    ZD = D.copy()
+    for i in range(ZD.shape[0]):
+        ZD[i] = (ZD[i] - ZD[i].mean()) / ZD[i].std()
+    return ZD
 
 
