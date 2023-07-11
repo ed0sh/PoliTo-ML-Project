@@ -41,9 +41,15 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
         if m is not None:
             reduced_DTR = Preproccessing.PCA(DTR, m)[0]
         else:
+            reduced_DTR = DTR.copy()
             m = "No"
 
         modelObject.update_dataset(reduced_DTR, LTR)
+        if isinstance(modelObject, LogRegClass):
+
+            modelObject.optimize_lambda_inplace(scaled_workPoint)
+            print(f"λ: {modelObject.lam}")
+
         error, DCF, minDCF = Util.k_folds(reduced_DTR, LTR, K, modelObject, scaled_workPoint)
         minDCF = round(minDCF, 3)
         print(f"{m}\t|\t{minDCF}")
@@ -130,26 +136,12 @@ if __name__ == '__main__':
     # logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
     # error, DCF, minDCF = Util.k_folds(Z_DTR, LTR, K, logTiedMVG, scaled_workPoint)
     # print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
-
-    print("----- log Regression -----")
-    logReg = LogRegClass(DTR, LTR, 0.00001)
-    evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
-
-    print("----- log Regression with ZScore-----")
-    logReg = LogRegClass(Z_DTR, LTR, 0.00001)
-    evaluate_model(Z_DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
-
     print("----- log Regression with optimized lambdas-----")
     logReg = LogRegClass.optimize_lambda(DTR, LTR, scaled_workPoint)
     logReg = LogRegClass.create_with_optimized_lambda(DTR, LTR, scaled_workPoint)
     evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print(f"Selected lambda: {logReg.lam}")
 
-    print("----- log Regression with inplace optimized lambdas-----")
-    logReg = LogRegClass(DTR, LTR, 0.00001)
-    logReg.optimize_lambda_inplace(scaled_workPoint, starting_lambda=0.001, offset=10, num_iterations=10000,
-                                   tolerance=1e-3)
-    evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print("----- log Regression with ZScore and inplace optimized lambdas-----")
     logReg = LogRegClass.create_with_optimized_lambda(Z_DTR, LTR, scaled_workPoint)
     evaluate_model(Z_DTR, LTR, PCA_values, K, logReg, scaled_workPoint)

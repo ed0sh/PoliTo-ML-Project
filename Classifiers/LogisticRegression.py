@@ -64,3 +64,20 @@ class LogRegClass(ClassifiersInterface):
                 bestMinDCF = minDCF
 
         return LogRegClass(DTR, LTR, selectedLambda)
+
+    def optimize_lambda_inplace(self, workPoint: Util.WorkPoint):
+
+        selectedLambda = 1e1
+        lambdas = [1e1, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]
+        bestMinDCF = 10
+
+        for lam in lambdas:
+            logRegObj = LogRegClass(self.DTR, self.LTR, lam)
+            _, _, minDCF = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
+
+            if minDCF < bestMinDCF:
+                selectedLambda = lam
+                bestMinDCF = minDCF
+
+        self.lam = selectedLambda
+
