@@ -37,7 +37,6 @@ def readfile(file):
 def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int, modelObject: ClassifiersInterface, scaled_workPoint: Util.WorkPoint):
     print("PCA\t|\tminDCF")
     for m in PCA_values:
-        reduced_DTR = DTR
         if m is not None:
             reduced_DTR = Preproccessing.PCA(DTR, m)[0]
         else:
@@ -92,6 +91,7 @@ if __name__ == '__main__':
         expl_variance_fract.append(Preproccessing.PCA(DTR, i)[1])
 
     Plots.plot_simple_plot(range(DTR.shape[0] + 1), expl_variance_fract, "PCA components", "Fraction of explained variance")
+
     # Acceptable values are 7, 8 and 9 as they retain at least 90% of the dataset variance
     PCA_values = [None, 9, 8, 7]
 
