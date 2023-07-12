@@ -15,6 +15,7 @@ class LogRegClass(ClassifiersInterface):
         self.lam = l
         self.nFeatures = DTR.shape[0]
         self.trained = False
+        self.quadratic = False
 
     def logreg_obj(self, v):
         # Compute and return the objective function value. You can retrieve all required information from self.DTR, self.LTR, self.l
@@ -81,3 +82,12 @@ class LogRegClass(ClassifiersInterface):
 
         self.lam = selectedLambda
 
+    def feature_expansion_inplace(self):
+        Phi = []
+        for i in range(self.DTR.shape[1]):
+            x = Util.vcol(self.DTR[:, i])
+            phi = numpy.vstack([Util.vcol(numpy.dot(x, x.T)), x])
+            Phi.append(phi)
+        Phi = numpy.hstack(Phi)
+        self.DTR = Phi
+        self.quadratic = True

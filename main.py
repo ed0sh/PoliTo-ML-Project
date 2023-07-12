@@ -47,6 +47,10 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
         modelObject.update_dataset(reduced_DTR, LTR)
         if isinstance(modelObject, LogRegClass):
 
+            if modelObject.quadratic:
+                modelObject.feature_expansion_inplace()
+                reduced_DTR = modelObject.DTR
+
             modelObject.optimize_lambda_inplace(scaled_workPoint)
             print(f"λ: {modelObject.lam}")
 
@@ -136,8 +140,8 @@ if __name__ == '__main__':
     # logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
     # error, DCF, minDCF = Util.k_folds(Z_DTR, LTR, K, logTiedMVG, scaled_workPoint)
     # print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
+    
     print("----- log Regression with optimized lambdas-----")
-    logReg = LogRegClass.optimize_lambda(DTR, LTR, scaled_workPoint)
     logReg = LogRegClass.create_with_optimized_lambda(DTR, LTR, scaled_workPoint)
     evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print(f"Selected lambda: {logReg.lam}")
@@ -145,4 +149,16 @@ if __name__ == '__main__':
     print("----- log Regression with ZScore and inplace optimized lambdas-----")
     logReg = LogRegClass.create_with_optimized_lambda(Z_DTR, LTR, scaled_workPoint)
     evaluate_model(Z_DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    print(f"Selected lambda: {logReg.lam}")
+
+    print("----- Quadratic log Regression with optimized lambdas-----")
+    logReg = LogRegClass.create_with_optimized_lambda(DTR, LTR, scaled_workPoint)
+    logReg.quadratic = True
+    evaluate_model(logReg.DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    print(f"Selected lambda: {logReg.lam}")
+
+    print("----- Quadratic log Regression with ZScore and inplace optimized lambdas-----")
+    logReg = LogRegClass.create_with_optimized_lambda(Z_DTR, LTR, scaled_workPoint)
+    logReg.quadratic = True
+    evaluate_model(logReg.DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print(f"Selected lambda: {logReg.lam}")
