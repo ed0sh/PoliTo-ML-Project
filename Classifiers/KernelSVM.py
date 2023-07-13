@@ -48,8 +48,8 @@ class KernelSVM(ClassifiersInterface):
 
     def dual_obj(self, alpha: numpy.array):
         alpha = Util.vcol(alpha)
-        loss = 0.5 * numpy.dot(alpha.T, numpy.dot(self.Hh, alpha)) - numpy.dot(alpha.T, numpy.ones((self.nSamples, 1)))
-        loss_grad = numpy.dot(self.Hh, alpha) - numpy.ones((self.nSamples, 1))
+        loss = 0.5 * numpy.dot(alpha.T, numpy.dot(self.Hh, alpha)) - alpha.sum()
+        loss_grad = numpy.dot(self.Hh, alpha) - numpy.ones(alpha.shape)
 
         return loss.ravel()[0], loss_grad.ravel()
 
