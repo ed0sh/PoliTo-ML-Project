@@ -10,6 +10,7 @@ class LinearSVM(ClassifiersInterface):
         self.DTR = DTR
         self.LTR = LTR
         self.C = C
+        self.balanced_C = None
         self.K = K
         self.ZTR = LTR * 2.0 - 1
         self.nFeatures = DTR.shape[0]
@@ -26,12 +27,20 @@ class LinearSVM(ClassifiersInterface):
 
     def primal_obj(self, wh: numpy.array):
         Dh = numpy.vstack([self.DTR, self.K * numpy.ones(self.nSamples)])
-        loss = (0.5 * scipy.linalg.norm(wh) ** 2) \
-               + (self.C * (numpy.maximum(
-                                numpy.zeros(self.nSamples),
-                                1 - (self.ZTR * (numpy.dot(wh.T, Dh))))
-                            ).sum()
-                  )
+
+        if self.balanced_C is not None:
+            loss = (0.5 * scipy.linalg.norm(wh) ** 2) \
+                    + (numpy.maximum(
+                            numpy.zeros(self.nSamples),
+                            1 - (self.ZTR * self.balanced_C * (numpy.dot(wh.T, Dh))))
+                    ).sum()
+        else:
+            loss = (0.5 * scipy.linalg.norm(wh) ** 2) \
+                    + (self.C * (numpy.maximum(
+                                    numpy.zeros(self.nSamples),
+                                    1 - (self.ZTR * (numpy.dot(wh.T, Dh))))
+                                ).sum()
+                    )
 
         return loss
 
@@ -42,9 +51,23 @@ class LinearSVM(ClassifiersInterface):
 
         return loss.ravel()[0], loss_grad.ravel()
 
+    def rebalance(self, workpoint: Util.WorkPoint):
+        n = float(self.DTR.shape[1])
+        nT = float((self.LTR > 0).sum())
+
+        emp_pi = nT / n
+        balanced_C = self.C * numpy.array([workpoint.pi / emp_pi, (1 - workpoint.pi) / (1 - emp_pi)])
+        self.balanced_C = [balanced_C[label] for label in self.LTR]
+
     def train(self):
+        self.compute_Hh()
         alpha = numpy.zeros(self.nSamples)
-        bounds = [(0, self.C) for _ in range(self.nSamples)]
+
+        if self.balanced_C is not None:
+            bounds = [(0, self.balanced_C[i]) for i in range(self.nSamples)]
+        else:
+            bounds = [(0, self.C) for _ in range(self.nSamples)]
+
         alphaOpt, fOpt, d = scipy.optimize.fmin_l_bfgs_b(self.dual_obj, x0=alpha, bounds=bounds, factr=1.0)
         Dh = numpy.vstack([self.DTR, self.K * numpy.ones(self.DTR.shape[1])])
         wh = ((Util.vrow(alphaOpt) * Util.vrow(self.ZTR)) * Dh).sum(axis=1)
@@ -73,3 +96,4 @@ class LinearSVM(ClassifiersInterface):
         self.Hh = None
         self.wh = None
         self.trained = False
+        self.balanced_C = None

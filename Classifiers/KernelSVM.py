@@ -6,18 +6,19 @@ from Utils import Util
 
 
 class KernelSVM(ClassifiersInterface):
-    def __init__(self, DTR: numpy.array, LTR: numpy.array, C: float, K: int, d=2, c=0, gamma=1, kernel_ype="poly"):
+    def __init__(self, DTR: numpy.array, LTR: numpy.array, C: float, K: int, d=2, c=0, gamma=1, kernel_type="poly"):
         self.DTR = DTR
         self.LTR = LTR
         self.C = C
+        self.balanced_C = None
         self.K = K
         self.d = d
         self.c = c
         self.gamma = gamma
 
-        if kernel_ype == "poly":
+        if kernel_type == "poly":
             self.kernel = self.poly_kernel
-        elif kernel_ype == "rbf":
+        elif kernel_type == "rbf":
             self.kernel = self.RBF_kernel
         else:
             raise RuntimeError
@@ -53,9 +54,21 @@ class KernelSVM(ClassifiersInterface):
 
         return loss.ravel()[0], loss_grad.ravel()
 
+    def rebalance(self, workpoint: Util.WorkPoint):
+        n = float(self.DTR.shape[1])
+        nT = float((self.LTR > 0).sum())
+
+        emp_pi = nT / n
+        balanced_C = self.C * numpy.array([workpoint.pi / emp_pi, (1 - workpoint.pi) / (1 - emp_pi)])
+        self.balanced_C = [balanced_C[label] for label in self.LTR]
+
     def train(self):
+        self.compute_Hh()
         alpha = numpy.zeros(self.nSamples)
-        bounds = [(0, self.C) for _ in range(self.nSamples)]
+        if self.balanced_C is not None:
+            bounds = [(0, self.balanced_C[i]) for i in range(self.nSamples)]
+        else:
+            bounds = [(0, self.C) for _ in range(self.nSamples)]
         alphaOpt, _, _ = scipy.optimize.fmin_l_bfgs_b(self.dual_obj, x0=alpha, bounds=bounds, factr=1.0)
         self.alpha = alphaOpt
         self.trained = True
@@ -83,3 +96,5 @@ class KernelSVM(ClassifiersInterface):
         self.Hh = None
         self.alpha = None
         self.trained = False
+        self.balanced_C = None
+
