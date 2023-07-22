@@ -100,26 +100,44 @@ def plot_correlation_matrix(M: numpy.array, title: str):
     plt.show()
 
 
-def plot_simple_plot(X: numpy.array, Y: numpy.array, x_label: str, y_label: str):
+def plot_simple_plot(X: numpy.array, Y: numpy.array, x_label: str, y_label: str, color: str, title: str, x_scale: str):
     fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
+    plot_simple_plot_no_show(fig, X, Y, x_label, y_label, color, title, title, x_scale)
+    plt.show()
 
-    plt.plot(X, Y, color='green', marker='o', linewidth=1)
+
+def plot_simple_plot_no_show(fig, X: numpy.array, Y: numpy.array, x_label: str, y_label: str,
+                             color: str, label: str, title: str, x_scale: str):
+    plt.plot(X, Y, color=color, marker='o', linewidth=1, label=label)
+    plt.xscale(x_scale)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
+    plt.title(title)
+    plt.legend(loc="upper right")
 
     # Major ticks every 20, minor ticks every 5
-    major_ticks = numpy.arange(0, 11, 1)
-    minor_ticks = numpy.arange(0, 11, 0.5)
-    ax.set_xticks(major_ticks)
-    ax.set_xticks(minor_ticks, minor=True)
+    if x_scale != "log":
+        ax = fig.add_subplot(1, 1, 1)
+        major_ticks = numpy.arange(0, 11, 1)
+        minor_ticks = numpy.arange(0, 11, 0.5)
+        ax.set_xticks(major_ticks)
+        ax.set_xticks(minor_ticks, minor=True)
 
-    major_ticks = numpy.arange(0, 1.1, 0.1)
-    minor_ticks = numpy.arange(0, 1.1, 0.05)
-    ax.set_yticks(major_ticks)
-    ax.set_yticks(minor_ticks, minor=True)
+        major_ticks = numpy.arange(0, 1.1, 0.1)
+        minor_ticks = numpy.arange(0, 1.1, 0.05)
+        ax.set_yticks(major_ticks)
+        ax.set_yticks(minor_ticks, minor=True)
 
-    ax.grid(which='minor', alpha=0.2)
-    ax.grid(which='major', alpha=0.5)
+        ax.grid(which='minor', alpha=0.2)
+        ax.grid(which='major', alpha=0.5)
+    else:
+        plt.grid(which='minor', alpha=0.2)
+        plt.grid(which='major', alpha=0.5)
+    return fig
 
+
+def show_plot():
     plt.show()
+
+def new_figure():
+    return plt.figure()

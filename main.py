@@ -90,7 +90,15 @@ if __name__ == '__main__':
     for i in range(DTR.shape[0] + 1):
         expl_variance_fract.append(Preproccessing.PCA(DTR, i)[1])
 
-    Plots.plot_simple_plot(range(DTR.shape[0] + 1), expl_variance_fract, "PCA components", "Fraction of explained variance")
+    Plots.plot_simple_plot(
+        range(DTR.shape[0] + 1),
+        expl_variance_fract,
+        x_label="PCA components",
+        y_label="Fraction of explained variance",
+        color='green',
+        title=f"PCA vs. Fraction of explained variance",
+        x_scale="linear"
+    )
 
     # Acceptable values are 7, 8 and 9 as they retain at least 90% of the dataset variance
     PCA_values = [None, 9, 8, 7]
