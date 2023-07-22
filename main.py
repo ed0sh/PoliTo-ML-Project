@@ -8,60 +8,10 @@ from Classifiers.NaiveMVGClassifier import NaiveMVGClassifier
 from Classifiers.TiedMVGClassifier import TiedMVGClassifier
 
 
-def readfile(file):
-    DList = []
-    labelsList = []
-    hLabels = {
-        '0': 0,
-        '1': 1
-    }
-
-    with open(file) as f:
-        for line in f:
-            try:
-                attrs = line.split(',')[0:10]
-                attrs = Util.vcol(numpy.array([float(i) for i in attrs]))
-                name = line.split(',')[-1].strip()
-                label = hLabels[name]
-                DList.append(attrs)
-                labelsList.append(label)
-            except Exception as e:
-                print("Error while reading the file!")
-                print(e)
-                return
-
-        D, L = numpy.hstack(DList), numpy.array(labelsList, dtype=numpy.int32)
-        return D, L
-
-
-def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int, modelObject: ClassifiersInterface, scaled_workPoint: Util.WorkPoint):
-    print("PCA\t|\tminDCF")
-    for m in PCA_values:
-        if m is not None:
-            reduced_DTR = Preproccessing.PCA(DTR, m)[0]
-        else:
-            reduced_DTR = DTR.copy()
-            m = "No"
-
-        modelObject.update_dataset(reduced_DTR, LTR)
-        if isinstance(modelObject, LogRegClass):
-
-            if modelObject.quadratic:
-                modelObject.feature_expansion_inplace()
-                reduced_DTR = modelObject.DTR
-
-            modelObject.optimize_lambda_inplace(scaled_workPoint)
-            print(f"λ: {modelObject.lam}")
-
-        error, DCF, minDCF = Util.k_folds(reduced_DTR, LTR, K, modelObject, scaled_workPoint)
-        minDCF = round(minDCF, 3)
-        print(f"{m}\t|\t{minDCF}")
-
-
 if __name__ == '__main__':
     # --- Load the dataset ---
-    (DTR, LTR) = readfile('data/Train.csv')
-    (DTE, LTE) = readfile('data/Test.csv')
+    (DTR, LTR) = Util.readfile('data/Train.csv')
+    (DTE, LTE) = Util.readfile('data/Test.csv')
 
     Z_DTR = Preproccessing.Z_Score(DTR)
     Z_DTE = Preproccessing.Z_Score(DTE)
@@ -116,10 +66,10 @@ if __name__ == '__main__':
 
     print("----- MVG -----")
     logMVG = MVGClassifier(DTR, LTR, scaled_workPoint.pi)
-    evaluate_model(DTR, LTR, PCA_values, K, logMVG, scaled_workPoint)
+    Util.evaluate_model(DTR, LTR, PCA_values, K, logMVG, scaled_workPoint)
 
     # The best minDCF value was given by m = 7 => we try also 6 and 5
-    evaluate_model(DTR, LTR, [6, 5], K, logMVG, scaled_workPoint)
+    Util.evaluate_model(DTR, LTR, [6, 5], K, logMVG, scaled_workPoint)
     # No, we can discard them
 
     # FIXME: Il prof non ha messo lo z-score su MVG (@ale dimmi tu)
@@ -130,8 +80,8 @@ if __name__ == '__main__':
 
     print("----- Naive MVG -----")
     logNaiveMVG = NaiveMVGClassifier(DTR, LTR, scaled_workPoint.pi)
-    evaluate_model(DTR, LTR, [10], K, logNaiveMVG, scaled_workPoint)
-    evaluate_model(DTR, LTR, PCA_values, K, logNaiveMVG, scaled_workPoint)
+    Util.evaluate_model(DTR, LTR, [10], K, logNaiveMVG, scaled_workPoint)
+    Util.evaluate_model(DTR, LTR, PCA_values, K, logNaiveMVG, scaled_workPoint)
 
     # FIXME: Il prof non ha messo lo z-score su MVG (@ale dimmi tu)
     # print("----- Naive MVG with ZScore -----")
@@ -141,7 +91,7 @@ if __name__ == '__main__':
 
     print("----- TiedMVG -----")
     logTiedMVG = TiedMVGClassifier(DTR, LTR, scaled_workPoint.pi)
-    evaluate_model(DTR, LTR, PCA_values, K, logTiedMVG, scaled_workPoint)
+    Util.evaluate_model(DTR, LTR, PCA_values, K, logTiedMVG, scaled_workPoint)
 
     # FIXME: Il prof non ha messo lo z-score su MVG (@ale dimmi tu)
     # print("----- TiedMVG with ZScore-----")
@@ -151,22 +101,22 @@ if __name__ == '__main__':
     
     print("----- log Regression with optimized lambdas-----")
     logReg = LogRegClass.create_with_optimized_lambda(DTR, LTR, scaled_workPoint)
-    evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    Util.evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print(f"Selected lambda: {logReg.lam}")
 
     print("----- log Regression with ZScore and inplace optimized lambdas-----")
     logReg = LogRegClass.create_with_optimized_lambda(Z_DTR, LTR, scaled_workPoint)
-    evaluate_model(Z_DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    Util.evaluate_model(Z_DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print(f"Selected lambda: {logReg.lam}")
 
     print("----- Quadratic log Regression with optimized lambdas-----")
     logReg = LogRegClass.create_with_optimized_lambda(DTR, LTR, scaled_workPoint)
     logReg.quadratic = True
-    evaluate_model(logReg.DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    Util.evaluate_model(logReg.DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print(f"Selected lambda: {logReg.lam}")
 
     print("----- Quadratic log Regression with ZScore and inplace optimized lambdas-----")
     logReg = LogRegClass.create_with_optimized_lambda(Z_DTR, LTR, scaled_workPoint)
     logReg.quadratic = True
-    evaluate_model(logReg.DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
+    Util.evaluate_model(logReg.DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print(f"Selected lambda: {logReg.lam}")

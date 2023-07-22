@@ -386,4 +386,73 @@ def eigen_constraint(Sigma, psi):
     U, s, _ = numpy.linalg.svd(Sigma)
     s[s < psi] = psi
     Sigma = numpy.dot(U, vcol(s) * U.T)
-    return Sigma
+    return Sigma    return Sigma
+
+
+def readfile(file):
+    DList = []
+    labelsList = []
+    hLabels = {
+        '0': 0,
+        '1': 1
+    }
+
+    with open(file) as f:
+        for line in f:
+            try:
+                attrs = line.split(',')[0:10]
+                attrs = vcol(numpy.array([float(i) for i in attrs]))
+                name = line.split(',')[-1].strip()
+                label = hLabels[name]
+                DList.append(attrs)
+                labelsList.append(label)
+            except Exception as e:
+                print("Error while reading the file!")
+                print(e)
+                return
+
+        D, L = numpy.hstack(DList), numpy.array(labelsList, dtype=numpy.int32)
+        return D, L
+
+
+def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int, modelObject: ClassifiersInterface,
+                   scaled_workPoint: WorkPoint):
+    print("PCA\t|\tminDCF")
+
+    minDCF_values = []
+    for m in PCA_values:
+        if m is not None:
+            reduced_DTR = Preproccessing.PCA(DTR, m)[0]
+        else:
+            reduced_DTR = DTR.copy()
+            m = "No"
+
+        # If we performed class-re-balancing, save a state to re-perform it again after updating the dataset
+        svm_rebalanced = False
+        if isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) \
+                or isinstance(modelObject, Classifiers.KernelSVM.KernelSVM):
+            if modelObject.balanced_C is not None:
+                svm_rebalanced = True
+
+        modelObject.update_dataset(reduced_DTR, LTR)
+
+        # Re-apply class balancing
+        if (isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject, Classifiers.KernelSVM.KernelSVM)) \
+                and svm_rebalanced:
+            modelObject.rebalance(scaled_workPoint)
+
+        # Apply feature expansion after changing the dataset
+        if isinstance(modelObject, Classifiers.LogisticRegression.LogRegClass):
+            if modelObject.quadratic:
+                modelObject.feature_expansion_inplace()
+                reduced_DTR = modelObject.DTR
+
+            modelObject.optimize_lambda_inplace(scaled_workPoint)
+            print(f"λ: {modelObject.lam}")
+
+        error, DCF, minDCF = k_folds(reduced_DTR, LTR, K, modelObject, scaled_workPoint)
+        minDCF = round(minDCF, 3)
+        print(f"{m}\t|\t{minDCF}")
+        minDCF_values.append(minDCF)
+    return minDCF_values
+
