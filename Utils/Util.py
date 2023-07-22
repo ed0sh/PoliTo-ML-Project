@@ -3,6 +3,8 @@ import math
 import numpy
 import scipy.special
 from Classifiers import ClassifiersInterface
+import Classifiers
+from Utils import Preproccessing, Plots
 
 
 def vcol(v: numpy.array):
@@ -253,7 +255,19 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
             data_train_set = numpy.hstack(d_folds[0:i])
             labels_train_set = numpy.hstack(l_folds[0:i])
 
+        # If we performed class-re-balancing, save a state to re-perform it again after updating the dataset
+        svm_rebalanced = False
+        if isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject, Classifiers.KernelSVM.KernelSVM):
+            if modelObject.balanced_C is not None:
+                svm_rebalanced = True
+
+        # Update model dataset
         modelObject.update_dataset(data_train_set, labels_train_set)
+
+        # Re-apply class balancing
+        if (isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject, Classifiers.KernelSVM.KernelSVM)) and svm_rebalanced:
+            modelObject.rebalance(workPoint)
+
         modelObject.train()
         predicted = modelObject.classify(data_test_set)
         err_rate, DCF = evaluate(predicted, labels_test_set, workPoint)
@@ -386,7 +400,7 @@ def eigen_constraint(Sigma, psi):
     U, s, _ = numpy.linalg.svd(Sigma)
     s[s < psi] = psi
     Sigma = numpy.dot(U, vcol(s) * U.T)
-    return Sigma    return Sigma
+    return Sigma
 
 
 def readfile(file):
@@ -456,3 +470,50 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
         minDCF_values.append(minDCF)
     return minDCF_values
 
+
+def svm_cross_val_graphs(
+        K_svm_vec: numpy.array,
+        C_vec: numpy.array,
+        DTR: numpy.array,
+        LTR: numpy.array,
+        PCA_values: list,
+        scaled_workPoint: WorkPoint,
+        rebalanced: bool,
+        colors: list,
+        svm_type_label: str,
+        kernel_type: str = None,
+        c=0.0, d=2, gamma=1
+        ):
+    K = 5
+
+    fig = Plots.new_figure()
+    for ki, K_svm in enumerate(K_svm_vec):
+        C_results = []
+        for C in C_vec:
+            print(f"K: {K_svm}, C: {C}")
+
+            if kernel_type == "poly" or kernel_type == "rbf":
+                modelSVM = Classifiers.KernelSVM.KernelSVM(DTR, LTR, C, K_svm, kernel_type=kernel_type, d=d, c=c, gamma=gamma)
+            else:
+                modelSVM = Classifiers.LinearSVM.LinearSVM(DTR, LTR, C, K_svm)
+
+            if rebalanced:
+                modelSVM.rebalance(scaled_workPoint)
+            minDCF_values = evaluate_model(DTR, LTR, PCA_values, K, modelSVM, scaled_workPoint)
+            C_results.append(minDCF_values)
+
+        print(f"K: {K_svm}")
+        print(C_results)
+        for i, m in enumerate(PCA_values):
+            Plots.plot_simple_plot_no_show(
+                fig,
+                C_vec,
+                numpy.array(C_results)[:, i],
+                x_label="C",
+                y_label=f"minDCF",
+                color=colors[(ki * len(PCA_values)) + i],
+                label=f"PCA={m} - K={K_svm}",
+                title=f"{svm_type_label}",
+                x_scale="log"
+            )
+    Plots.show_plot()
