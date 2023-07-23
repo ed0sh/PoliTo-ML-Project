@@ -108,7 +108,7 @@ def plot_simple_plot(X: numpy.array, Y: numpy.array, x_label: str, y_label: str,
 
 def plot_simple_plot_no_show(fig, X: numpy.array, Y: numpy.array, x_label: str, y_label: str,
                              color: str, label: str, title: str, x_scale: str):
-    plt.plot(X, Y, color=color, marker='o', linewidth=1, label=label)
+    plt.plot(X, Y, color=color, marker='.', linewidth=1, label=label)
     plt.xscale(x_scale)
     plt.xlabel(x_label)
     plt.ylabel(y_label)

@@ -7,7 +7,6 @@ from Classifiers.MVGClassifier import MVGClassifier
 from Classifiers.NaiveMVGClassifier import NaiveMVGClassifier
 from Classifiers.TiedMVGClassifier import TiedMVGClassifier
 
-
 if __name__ == '__main__':
     # --- Load the dataset ---
     (DTR, LTR) = Util.readfile('data/Train.csv')
@@ -98,7 +97,7 @@ if __name__ == '__main__':
     # logTiedMVG = TiedMVGClassifier(Z_DTR, LTR, scaled_workPoint.pi)
     # error, DCF, minDCF = Util.k_folds(Z_DTR, LTR, K, logTiedMVG, scaled_workPoint)
     # print(f"Error rate : {error} \nNormalized DCF : {DCF}\nMinDCF : {minDCF}")
-    
+
     print("----- log Regression with optimized lambdas-----")
     logReg = LogRegClass.create_with_optimized_lambda(DTR, LTR, scaled_workPoint)
     Util.evaluate_model(DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
@@ -120,3 +119,78 @@ if __name__ == '__main__':
     logReg.quadratic = True
     Util.evaluate_model(logReg.DTR, LTR, PCA_values, K, logReg, scaled_workPoint)
     print(f"Selected lambda: {logReg.lam}")
+
+    # SVMs
+    C_vec = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2]
+    K_svm_vec = [1, 1e1]
+    colors = ['red', 'orange', 'blue', 'green']
+    PCA_values_reduced = [None, 7]
+
+    print("----- SVM linear -----")
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+                              colors, svm_type_label="SVM linear")
+
+    print("----- SVM linear re-balanced -----")
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+                              colors, svm_type_label="SVM linear re-balanced")
+
+    print("----- SVM linear w/ Z-score -----")
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+                              colors, svm_type_label="SVM linear w/ Z-score")
+
+    print("----- SVM linear re-balanced w/ Z-score -----")
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+                              colors, svm_type_label="SVM linear re-balanced w/ Z-score")
+
+    C_vec = [1e-2, 1e-1, 1, 1e1]
+    c = 0
+    print("----- SVM poly 2 -----")
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+                              colors, svm_type_label="SVM poly 2", kernel_type="poly", d=2, c=c)
+
+    print("----- SVM poly 2 re-balanced -----")
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+                              colors, svm_type_label="SVM poly 2 re-balanced", kernel_type="poly", d=2, c=c)
+
+    print("----- SVM poly 2 w/ Z-score -----")
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+                              colors, svm_type_label="SVM poly 2 w/ Z-score", kernel_type="poly", d=2, c=c)
+
+    print("----- SVM poly 2 re-balanced w/ Z-score -----")
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+                              colors, svm_type_label="SVM poly 2 re-balanced w/ Z-score", kernel_type="poly", d=2, c=c)
+
+    C_vec = [1e-3, 1e-2, 1e-1, 1]
+    c_vec = [1, 10]
+    for c in c_vec:
+        print(f"----- SVM poly 2 - c={c} -----")
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+                                  colors, svm_type_label=f"SVM poly 2 - c={c}", kernel_type="poly", d=2, c=c)
+
+        print(f"----- SVM poly 2 re-balanced - c={c} -----")
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+                                  colors, svm_type_label=f"SVM poly 2 re-balanced - c={c}", kernel_type="poly", d=2, c=c)
+
+    C_vec = [1e-5, 1e-4, 1e-3, 1e-2]
+    c_vec = [1, 10]
+    for c in c_vec:
+        print(f"----- SVM poly 3 - c={c} -----")
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+                                  colors, svm_type_label=f"SVM poly 3 - c={c}", kernel_type="poly", d=3, c=c)
+
+        print(f"----- SVM poly 3 re-balanced - c={c} -----")
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+                                  colors, svm_type_label=f"SVM poly 3 w/ Z-score - c={c}", kernel_type="poly", d=3,
+                                  c=c)
+
+    C_vec = [1e-4, 1e-3, 2e-3, 1e-2, 2e-2, 1e-1, 2e-1, 1, 2]
+    K_svm_vec = [1e-3, 1e-2, 0.05, 0.1]
+    colors = ['red', 'orange', 'blue', 'green', 'black', 'yellow', 'grey', 'purple']
+
+    log_gamma_values = [-3, -4, -5, -6]
+    for log_gamma in log_gamma_values:
+        print(f"----- SVM RBF - log ɣ={log_gamma} -----")
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+                                  colors, svm_type_label=f"SVM RBF - log ɣ={log_gamma}", kernel_type="rbf",
+                                  gamma=numpy.exp(log_gamma))
+
