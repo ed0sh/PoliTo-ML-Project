@@ -115,13 +115,13 @@ def Compute_DCF(matrix: numpy.array, workPoint: WorkPoint):
     return DCF, nDCF
 
 
-def compute_minDCF(LTE,SPost,workPoint):
+def compute_minDCF(LTE, SPost, workPoint):
     idx = numpy.argsort(SPost.ravel())
     sortL = LTE[idx]
     MinDCF = 100
     startingMatrix = confusion_matrix(LTE, Discriminant_ratio(-math.inf, SPost))
     for val in sortL:
-        if val == 0 :
+        if val == 0:
             startingMatrix[0][0] = startingMatrix[0][0] + 1
             startingMatrix[1][0] = startingMatrix[1][0] - 1
         else:
@@ -132,7 +132,8 @@ def compute_minDCF(LTE,SPost,workPoint):
             MinDCF = tempDCF
     return MinDCF
 
-def Discriminant_ratio(threshold,SPost):
+
+def Discriminant_ratio(threshold, SPost):
     res = numpy.copy(SPost)
     res[SPost > threshold] = 1
     res[SPost <= threshold] = 0
@@ -257,7 +258,8 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
 
         # If we performed class-re-balancing, save a state to re-perform it again after updating the dataset
         svm_rebalanced = False
-        if isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject, Classifiers.KernelSVM.KernelSVM):
+        if isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject,
+                                                                                  Classifiers.KernelSVM.KernelSVM):
             if modelObject.balanced_C is not None:
                 svm_rebalanced = True
 
@@ -265,7 +267,8 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
         modelObject.update_dataset(data_train_set, labels_train_set)
 
         # Re-apply class balancing
-        if (isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject, Classifiers.KernelSVM.KernelSVM)) and svm_rebalanced:
+        if (isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject,
+                                                                                   Classifiers.KernelSVM.KernelSVM)) and svm_rebalanced:
             modelObject.rebalance(workPoint)
 
         modelObject.train()
@@ -276,13 +279,13 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
         scores.extend(modelObject.get_scores())
         predictions.extend(predicted)
         labels.extend(labels_test_set)
-        minDCFs.append(compute_minDCF(labels_test_set,modelObject.get_scores(),workPoint))
+        minDCFs.append(compute_minDCF(labels_test_set, modelObject.get_scores(), workPoint))
 
     mean_err_rate = numpy.array(error_rates).mean()
     mean_DCF = numpy.array(DCFs).mean()
     minDCF_ = numpy.array(minDCFs).min()
-    minDCF = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint) #TODO: check if this is correct
-    return mean_err_rate, mean_DCF , minDCF
+    minDCF = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint)  # TODO: check if this is correct
+    return mean_err_rate, mean_DCF, minDCF
 
 
 def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
@@ -322,7 +325,7 @@ def EM(X, gmm, psi, diagonal_cov, tied_cov):
         ll = logpdf_GMM(X, gmm).sum()
         lls.append(ll)
 
-    return gmm, lls, (ll/X.shape[1])
+    return gmm, lls, (ll / X.shape[1])
 
 
 def E_step(X, gmm):
@@ -386,8 +389,8 @@ def LBG(X, gmm, alpha, max_g, psi, diagonal_cov, tied_cov):
             U, s, Vh = numpy.linalg.svd(Sigma)
             d = U[:, 0:1] * s[0] ** 0.5 * alpha
 
-            new_gmm.append((w/2, mu + d, Sigma))
-            new_gmm.append((w/2, mu - d, Sigma))
+            new_gmm.append((w / 2, mu + d, Sigma))
+            new_gmm.append((w / 2, mu - d, Sigma))
 
         gmm, lls, ll_mean = EM(X, new_gmm, psi, diagonal_cov, tied_cov)
         g *= 2
@@ -451,7 +454,8 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
         modelObject.update_dataset(reduced_DTR, LTR)
 
         # Re-apply class balancing
-        if (isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject, Classifiers.KernelSVM.KernelSVM)) \
+        if (isinstance(modelObject, Classifiers.LinearSVM.LinearSVM) or isinstance(modelObject,
+                                                                                   Classifiers.KernelSVM.KernelSVM)) \
                 and svm_rebalanced:
             modelObject.rebalance(scaled_workPoint)
 
@@ -484,7 +488,6 @@ def svm_cross_val_graphs(
         svm_type_label: str,
         kernel_type: str = None,
         c=0.0, d=2, gamma=1):
-
     fig = Plots.new_figure()
     for ki, K_svm in enumerate(K_svm_vec):
         C_results = []
@@ -492,7 +495,8 @@ def svm_cross_val_graphs(
             print(f"K: {K_svm}, C: {C}")
 
             if kernel_type == "poly" or kernel_type == "rbf":
-                modelSVM = Classifiers.KernelSVM.KernelSVM(DTR, LTR, C, K_svm, kernel_type=kernel_type, d=d, c=c, gamma=gamma)
+                modelSVM = Classifiers.KernelSVM.KernelSVM(DTR, LTR, C, K_svm, kernel_type=kernel_type, d=d, c=c,
+                                                           gamma=gamma)
             else:
                 modelSVM = Classifiers.LinearSVM.LinearSVM(DTR, LTR, C, K_svm)
 
