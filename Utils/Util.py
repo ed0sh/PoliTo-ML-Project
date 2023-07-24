@@ -303,12 +303,12 @@ def logpdf_GMM(X: numpy.array, gmm: numpy.array):
     return logdens
 
 
-def EM(X, gmm, psi, sigma_type=None):
+def EM(X, gmm, psi, diagonal_cov, tied_cov):
     lls = []
     delta = 1e-6
 
     P = E_step(X, gmm)
-    gmm = M_step(P, X, psi, sigma_type)
+    gmm = M_step(P, X, psi, diagonal_cov, tied_cov)
     ll = logpdf_GMM(X, gmm).sum()
     lls.append(ll)
 
@@ -318,7 +318,7 @@ def EM(X, gmm, psi, sigma_type=None):
         i += 1
         last_ll = ll
         P = E_step(X, gmm)
-        gmm = M_step(P, X, psi, sigma_type)
+        gmm = M_step(P, X, psi, diagonal_cov, tied_cov)
         ll = logpdf_GMM(X, gmm).sum()
         lls.append(ll)
 
@@ -338,7 +338,7 @@ def E_step(X, gmm):
     return P
 
 
-def M_step(P, X, psi, sigma_type=None):
+def M_step(P, X, psi, diagonal_cov, tied_cov):
     gmm_updated = []
     Zg_tot = P.sum()
     Zgs = []
@@ -355,7 +355,7 @@ def M_step(P, X, psi, sigma_type=None):
         mu_g = F_g / Z_g
         Sigma_g = (S_g / Z_g) - numpy.dot(mu_g, mu_g.T)
 
-        if sigma_type == "diagonal":
+        if diagonal_cov:
             Sigma_g = Sigma_g * numpy.eye(Sigma_g.shape[1])
 
         Sigma_g = eigen_constraint(Sigma_g, psi)
@@ -363,7 +363,7 @@ def M_step(P, X, psi, sigma_type=None):
         w_g = Z_g / Zg_tot
         gmm_updated.append((w_g, mu_g, Sigma_g))
 
-    if sigma_type == "tied":
+    if tied_cov:
         Sigma_tied = sum([w * C for w, mu, C in gmm_updated])
         Sigma_tied = eigen_constraint(Sigma_tied, psi)
         gmm_updated = [(w, mu, Sigma_tied) for w, mu, _ in gmm_updated]
@@ -371,7 +371,7 @@ def M_step(P, X, psi, sigma_type=None):
     return gmm_updated
 
 
-def LBG(X, gmm, alpha, max_g, psi, sigma_type=None):
+def LBG(X, gmm, alpha, max_g, psi, diagonal_cov, tied_cov):
     g = 1
     gmm = [(gmm[0][0], gmm[0][1], eigen_constraint(gmm[0][2], psi))]
 
@@ -389,7 +389,7 @@ def LBG(X, gmm, alpha, max_g, psi, sigma_type=None):
             new_gmm.append((w/2, mu + d, Sigma))
             new_gmm.append((w/2, mu - d, Sigma))
 
-        gmm, lls, ll_mean = EM(X, new_gmm, psi, sigma_type)
+        gmm, lls, ll_mean = EM(X, new_gmm, psi, diagonal_cov, tied_cov)
         g *= 2
         all_lls.extend(lls)
 
@@ -518,21 +518,23 @@ def svm_cross_val_graphs(
     Plots.show_plot()
 
 
-def gmm_grid_search_max_g(
-        max_g_c0_vec: numpy.array,
-        max_g_c1_vec: numpy.array,
-        DTR: numpy.array, LTR: numpy.array,
-        alpha: float, psi: float, sigma_type: str,
-        PCA_values: list,
-        K: int,
-        scaled_workPoint: WorkPoint):
-
+def gmm_grid_search_max_g(DTR: numpy.array, LTR: numpy.array,
+                          max_g_c0_vec: numpy.array, max_g_c1_vec: numpy.array,
+                          params_gmm_target: dict,
+                          params_gmm_non_target: dict,
+                          PCA_values: list,
+                          K: int,
+                          scaled_workPoint: WorkPoint):
     max_g_minDCFs = {}
     for max_g_c0 in max_g_c0_vec:
+        params_gmm_non_target["max_g"] = max_g_c0
+
         max_g_c1_minDCFs = []
         for max_g_c1 in max_g_c1_vec:
             print(f"----- max_g_c0 = {max_g_c0}, max_g_c1 = {max_g_c1} -----")
-            gmm_classifier = Classifiers.GMMClassifier.GMMClassifier(DTR, LTR, alpha, psi, max_g_c0, max_g_c1, sigma_type)
+            params_gmm_target["max_g"] = max_g_c1
+
+            gmm_classifier = Classifiers.GMMClassifier.GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
             minDCFs = evaluate_model(gmm_classifier.DTR, LTR, PCA_values, K, gmm_classifier, scaled_workPoint)
 
             max_g_c1_minDCFs.append(minDCFs[0])

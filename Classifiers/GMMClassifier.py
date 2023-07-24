@@ -5,22 +5,32 @@ from Classifiers.ClassifiersInterface import ClassifiersInterface
 
 
 class GMMClassifier(ClassifiersInterface):
-    def __init__(self, DTR: numpy.array, LTR: numpy.array, alpha: float, psi: float, max_g_c0: int, max_g_c1: int, sigma_type: str):
+    def __init__(self,
+                 DTR: numpy.array, LTR: numpy.array,
+                 params_gmm_target: dict,
+                 params_gmm_non_target: dict):
+
         self.DTR = DTR
         self.LTR = LTR
-        self.alpha = alpha
-        self.psi = psi
-        self.max_g_c0 = max_g_c0
-        self.max_g_c1 = max_g_c1
-        self.sigma_type = sigma_type
+        self.params_gmm_target = params_gmm_target
+        self.params_gmm_non_target = params_gmm_non_target
         self.trained = False
         self.scores = None
         self.gmms = []
-        for c in numpy.unique(self.LTR):
-            GMM_c = GMM(self.DTR[:, self.LTR == c], self.alpha, self.psi,
-                        self.max_g_c0 if c == 0 else self.max_g_c1,
-                        self.sigma_type)
-            self.gmms.append(GMM_c)
+
+        GMM_nt = GMM(self.DTR[:, self.LTR == 0],
+                     self.params_gmm_non_target['alpha'],
+                     self.params_gmm_non_target['psi'],
+                     self.params_gmm_non_target['max_g'],
+                     self.params_gmm_non_target['diagonal'],
+                     self.params_gmm_non_target['tied'])
+        GMM_t = GMM(self.DTR[:, self.LTR == 1],
+                    self.params_gmm_target['alpha'],
+                    self.params_gmm_target['psi'],
+                    self.params_gmm_target['max_g'],
+                    self.params_gmm_target['diagonal'],
+                    self.params_gmm_target['tied'])
+        self.gmms = [GMM_nt, GMM_t]
 
     def classify(self, DTE: numpy.array):
         if not self.trained:
@@ -47,11 +57,18 @@ class GMMClassifier(ClassifiersInterface):
         self.DTR = DTR
         self.LTR = LTR
 
-        self.gmms = []
-        for c in numpy.unique(self.LTR):
-            GMM_c = GMM(self.DTR[:, self.LTR == c], self.alpha, self.psi,
-                        self.max_g_c0 if c == 0 else self.max_g_c1,
-                        self.sigma_type)
-            self.gmms.append(GMM_c)
+        GMM_nt = GMM(self.DTR[:, self.LTR == 0],
+                     self.params_gmm_non_target['alpha'],
+                     self.params_gmm_non_target['psi'],
+                     self.params_gmm_non_target['max_g'],
+                     self.params_gmm_non_target['diagonal'],
+                     self.params_gmm_non_target['tied'])
+        GMM_t = GMM(self.DTR[:, self.LTR == 1],
+                    self.params_gmm_target['alpha'],
+                    self.params_gmm_target['psi'],
+                    self.params_gmm_target['max_g'],
+                    self.params_gmm_target['diagonal'],
+                    self.params_gmm_target['tied'])
+        self.gmms = [GMM_nt, GMM_t]
 
         self.trained = False
