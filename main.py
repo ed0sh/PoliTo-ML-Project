@@ -127,59 +127,59 @@ if __name__ == '__main__':
     PCA_values_reduced = [None, 7]
 
     print("----- SVM linear -----")
-    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, False,
                               colors, svm_type_label="SVM linear")
 
     print("----- SVM linear re-balanced -----")
-    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, True,
                               colors, svm_type_label="SVM linear re-balanced")
 
     print("----- SVM linear w/ Z-score -----")
-    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, K, scaled_workPoint, False,
                               colors, svm_type_label="SVM linear w/ Z-score")
 
     print("----- SVM linear re-balanced w/ Z-score -----")
-    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, K, scaled_workPoint, True,
                               colors, svm_type_label="SVM linear re-balanced w/ Z-score")
 
     C_vec = [1e-2, 1e-1, 1, 1e1]
     c = 0
     print("----- SVM poly 2 -----")
-    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, False,
                               colors, svm_type_label="SVM poly 2", kernel_type="poly", d=2, c=c)
 
     print("----- SVM poly 2 re-balanced -----")
-    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, True,
                               colors, svm_type_label="SVM poly 2 re-balanced", kernel_type="poly", d=2, c=c)
 
     print("----- SVM poly 2 w/ Z-score -----")
-    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, K, scaled_workPoint, False,
                               colors, svm_type_label="SVM poly 2 w/ Z-score", kernel_type="poly", d=2, c=c)
 
     print("----- SVM poly 2 re-balanced w/ Z-score -----")
-    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+    Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, K, scaled_workPoint, True,
                               colors, svm_type_label="SVM poly 2 re-balanced w/ Z-score", kernel_type="poly", d=2, c=c)
 
     C_vec = [1e-3, 1e-2, 1e-1, 1]
     c_vec = [1, 10]
     for c in c_vec:
         print(f"----- SVM poly 2 - c={c} -----")
-        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, False,
                                   colors, svm_type_label=f"SVM poly 2 - c={c}", kernel_type="poly", d=2, c=c)
 
         print(f"----- SVM poly 2 re-balanced - c={c} -----")
-        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, True,
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, True,
                                   colors, svm_type_label=f"SVM poly 2 re-balanced - c={c}", kernel_type="poly", d=2, c=c)
 
     C_vec = [1e-5, 1e-4, 1e-3, 1e-2]
     c_vec = [1, 10]
     for c in c_vec:
         print(f"----- SVM poly 3 - c={c} -----")
-        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, False,
                                   colors, svm_type_label=f"SVM poly 3 - c={c}", kernel_type="poly", d=3, c=c)
 
         print(f"----- SVM poly 3 re-balanced - c={c} -----")
-        Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, Z_DTR, LTR, PCA_values_reduced, K, scaled_workPoint, False,
                                   colors, svm_type_label=f"SVM poly 3 w/ Z-score - c={c}", kernel_type="poly", d=3,
                                   c=c)
 
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     log_gamma_values = [-3, -4, -5, -6]
     for log_gamma in log_gamma_values:
         print(f"----- SVM RBF - log ɣ={log_gamma} -----")
-        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, scaled_workPoint, False,
+        Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, False,
                                   colors, svm_type_label=f"SVM RBF - log ɣ={log_gamma}", kernel_type="rbf",
                                   gamma=numpy.exp(log_gamma))
 

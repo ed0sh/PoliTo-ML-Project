@@ -477,6 +477,7 @@ def svm_cross_val_graphs(
         DTR: numpy.array,
         LTR: numpy.array,
         PCA_values: list,
+        K: int,
         scaled_workPoint: WorkPoint,
         rebalanced: bool,
         colors: list,
