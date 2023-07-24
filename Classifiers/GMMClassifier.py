@@ -1,22 +1,25 @@
 import numpy
 
-from GMM import GMM
+from Classifiers.GMM import GMM
 from Classifiers.ClassifiersInterface import ClassifiersInterface
 
 
 class GMMClassifier(ClassifiersInterface):
-    def __init__(self, DTR: numpy.array, LTR: numpy.array, alpha: float, psi: float, max_g: int, sigma_type: str):
+    def __init__(self, DTR: numpy.array, LTR: numpy.array, alpha: float, psi: float, max_g_c0: int, max_g_c1: int, sigma_type: str):
         self.DTR = DTR
         self.LTR = LTR
         self.alpha = alpha
         self.psi = psi
-        self.max_g = max_g
+        self.max_g_c0 = max_g_c0
+        self.max_g_c1 = max_g_c1
         self.sigma_type = sigma_type
         self.trained = False
         self.scores = None
         self.gmms = []
         for c in numpy.unique(self.LTR):
-            GMM_c = GMM(self.DTR[:, self.LTR == c], self.alpha, self.psi, self.max_g, self.sigma_type)
+            GMM_c = GMM(self.DTR[:, self.LTR == c], self.alpha, self.psi,
+                        self.max_g_c0 if c == 0 else self.max_g_c1,
+                        self.sigma_type)
             self.gmms.append(GMM_c)
 
     def classify(self, DTE: numpy.array):
@@ -46,7 +49,9 @@ class GMMClassifier(ClassifiersInterface):
 
         self.gmms = []
         for c in numpy.unique(self.LTR):
-            GMM_c = GMM(self.DTR[:, self.LTR == c], self.alpha, self.psi, self.max_g, self.sigma_type)
+            GMM_c = GMM(self.DTR[:, self.LTR == c], self.alpha, self.psi,
+                        self.max_g_c0 if c == 0 else self.max_g_c1,
+                        self.sigma_type)
             self.gmms.append(GMM_c)
 
         self.trained = False
