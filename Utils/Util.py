@@ -483,9 +483,7 @@ def svm_cross_val_graphs(
         colors: list,
         svm_type_label: str,
         kernel_type: str = None,
-        c=0.0, d=2, gamma=1
-        ):
-    K = 5
+        c=0.0, d=2, gamma=1):
 
     fig = Plots.new_figure()
     for ki, K_svm in enumerate(K_svm_vec):
@@ -518,3 +516,26 @@ def svm_cross_val_graphs(
                 x_scale="log"
             )
     Plots.show_plot()
+
+
+def gmm_grid_search_max_g(
+        max_g_c0_vec: numpy.array,
+        max_g_c1_vec: numpy.array,
+        DTR: numpy.array, LTR: numpy.array,
+        alpha: float, psi: float, sigma_type: str,
+        PCA_values: list,
+        K: int,
+        scaled_workPoint: WorkPoint):
+
+    max_g_minDCFs = {}
+    for max_g_c0 in max_g_c0_vec:
+        max_g_c1_minDCFs = []
+        for max_g_c1 in max_g_c1_vec:
+            print(f"----- max_g_c0 = {max_g_c0}, max_g_c1 = {max_g_c1} -----")
+            gmm_classifier = Classifiers.GMMClassifier.GMMClassifier(DTR, LTR, alpha, psi, max_g_c0, max_g_c1, sigma_type)
+            minDCFs = evaluate_model(gmm_classifier.DTR, LTR, PCA_values, K, gmm_classifier, scaled_workPoint)
+
+            max_g_c1_minDCFs.append(minDCFs[0])
+        max_g_minDCFs[max_g_c0] = max_g_c1_minDCFs
+
+    return max_g_minDCFs

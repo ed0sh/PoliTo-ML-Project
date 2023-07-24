@@ -136,8 +136,37 @@ def plot_simple_plot_no_show(fig, X: numpy.array, Y: numpy.array, x_label: str, 
     return fig
 
 
+def plot_gmm_g_grid_search(
+        minDCFs: numpy.array,
+        max_g_c1_vec: numpy.array,
+        sigma_type: str,
+        PCA_dimensions: int):
+    x = numpy.arange(len(max_g_c1_vec))  # the label locations
+    width = 0.15  # the width of the bars
+    multiplier = -1.5
+
+    fig, ax = plt.subplots(layout='constrained')
+    for attribute, measurement in minDCFs.items():
+        offset = width * multiplier
+        rects = ax.bar(x + offset, measurement, width, label=f"Non-target g={attribute}",
+                       color=plt.get_cmap("tab20")(attribute // 2))
+        ax.bar_label(rects, padding=12, rotation='vertical')
+        multiplier += 1
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('minDCF')
+    ax.set_xlabel('Target class "g" components')
+    ax.set_title(f'{sigma_type} covariance GMM, PCA = {PCA_dimensions}')
+    ax.set_xticks(x + width, max_g_c1_vec)
+    ax.legend(loc='upper left', ncols=3)
+    ax.set_ylim(0, 1)
+
+    plt.show()
+
+
 def show_plot():
     plt.show()
+
 
 def new_figure():
     return plt.figure()
