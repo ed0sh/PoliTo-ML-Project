@@ -30,6 +30,7 @@ class KernelSVM(ClassifiersInterface):
         self.Hh = None
         self.alpha = None
         self.trained = False
+        self.scores = None
 
     def RBF_kernel(self, X1, X2):
         slack_variable = self.K ** 2

@@ -28,6 +28,9 @@ class GMMClassifier(ClassifiersInterface):
             log_dens.append(GMM_c.logdens(DTE))
         log_dens = numpy.vstack(log_dens)
 
+        if len(self.gmms) == 2:
+            self.scores = log_dens[1] - log_dens[0]
+
         predicted = numpy.argmax(log_dens, axis=0)
         return predicted
 

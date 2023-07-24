@@ -18,6 +18,7 @@ class LinearSVM(ClassifiersInterface):
         self.Hh = None
         self.wh = None
         self.trained = False
+        self.scores = None
 
     def compute_Hh(self):
         Dh = numpy.vstack([self.DTR, self.K * numpy.ones(self.nSamples)])
