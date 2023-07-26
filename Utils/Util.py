@@ -545,3 +545,14 @@ def gmm_grid_search_max_g(DTR: numpy.array, LTR: numpy.array,
         max_g_minDCFs[max_g_c0] = max_g_c1_minDCFs
 
     return max_g_minDCFs
+
+
+def get_sigma_type_as_string(diagonal: bool, tied: bool):
+    if diagonal and tied:
+        return "Tied Diagonal"
+    elif diagonal:
+        return "Diagonal"
+    elif tied:
+        return "Tied"
+    else:
+        return "Full"

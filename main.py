@@ -194,3 +194,49 @@ if __name__ == '__main__':
                                   colors, svm_type_label=f"SVM RBF - log ɣ={log_gamma}", kernel_type="rbf",
                                   gamma=numpy.exp(log_gamma))
 
+    # GMMs
+    params_gmm_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 1,
+        "diagonal": False,
+        "tied": False
+    }
+
+    params_gmm_non_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 1,
+        "diagonal": False,
+        "tied": False
+    }
+
+    max_g_c0_vec = [1, 2, 4, 8, 16, 32]
+    max_g_c1_vec = [1, 2, 4]
+    PCA_values = [None]
+
+    print(f"----- GMM - target 'g' components: {max_g_c1_vec} -----")
+    max_g_minDCFs = Util.gmm_grid_search_max_g(DTR, LTR,
+                                               max_g_c0_vec, max_g_c1_vec,
+                                               params_gmm_target,
+                                               params_gmm_non_target,
+                                               PCA_values, K,
+                                               scaled_workPoint)
+    sigma_type_t = Util.get_sigma_type_as_string(params_gmm_target["diagonal"], params_gmm_target["tied"])
+    sigma_type_nt = Util.get_sigma_type_as_string(params_gmm_non_target["diagonal"], params_gmm_non_target["tied"])
+    Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
+                                 PCA_values[0])
+
+    max_g_c1_vec = [8, 16, 32]
+    print(f"----- GMM - target 'g' components: {max_g_c1_vec} -----")
+    max_g_minDCFs = Util.gmm_grid_search_max_g(DTR, LTR,
+                                               max_g_c0_vec, max_g_c1_vec,
+                                               params_gmm_target,
+                                               params_gmm_non_target,
+                                               PCA_values, K,
+                                               scaled_workPoint)
+
+    sigma_type_t = Util.get_sigma_type_as_string(params_gmm_target["diagonal"], params_gmm_target["tied"])
+    sigma_type_nt = Util.get_sigma_type_as_string(params_gmm_non_target["diagonal"], params_gmm_non_target["tied"])
+    Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
+                                 PCA_values[0])

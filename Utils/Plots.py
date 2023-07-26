@@ -156,7 +156,7 @@ def plot_gmm_g_grid_search(
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('minDCF')
     ax.set_xlabel('Target class "g" components')
-    ax.set_title(f'{sigma_type} covariance GMM, PCA = {PCA_dimensions}')
+    ax.set_title(f'{sigma_type}\nPCA = {PCA_dimensions}')
     ax.set_xticks(x + width, max_g_c1_vec)
     ax.legend(loc='upper left', ncols=3)
     ax.set_ylim(0, 1)
