@@ -437,6 +437,7 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
     print("PCA\t|\tminDCF")
 
     minDCF_values = []
+    DCF_values = []
     for m in PCA_values:
         if m is not None:
             reduced_DTR = Preproccessing.PCA(DTR, m)[0]
@@ -472,7 +473,8 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
         minDCF = round(minDCF, 3)
         print(f"{m}\t|\t{minDCF}")
         minDCF_values.append(minDCF)
-    return minDCF_values
+        DCF_values.append(DCF)
+    return minDCF_values, DCF_values
 
 
 def svm_cross_val_graphs(
@@ -522,29 +524,30 @@ def svm_cross_val_graphs(
     Plots.show_plot()
 
 
-def gmm_grid_search_max_g(DTR: numpy.array, LTR: numpy.array,
-                          max_g_c0_vec: numpy.array, max_g_c1_vec: numpy.array,
-                          params_gmm_target: dict,
-                          params_gmm_non_target: dict,
-                          PCA_values: list,
-                          K: int,
-                          scaled_workPoint: WorkPoint):
-    max_g_minDCFs = {}
-    for max_g_c0 in max_g_c0_vec:
-        params_gmm_non_target["max_g"] = max_g_c0
+def gmm_grid_search_one_prop(DTR: numpy.array, LTR: numpy.array,
+                             prop_c0_vec: numpy.array, prop_c1_vec: numpy.array,
+                             prop_name: str,
+                             params_gmm_target: dict,
+                             params_gmm_non_target: dict,
+                             PCA_values: list,
+                             K: int,
+                             scaled_workPoint: WorkPoint):
+    prop_minDCFs = {}
+    for prop_c0 in prop_c0_vec:
+        params_gmm_non_target[prop_name] = prop_c0
 
-        max_g_c1_minDCFs = []
-        for max_g_c1 in max_g_c1_vec:
-            print(f"----- max_g_c0 = {max_g_c0}, max_g_c1 = {max_g_c1} -----")
-            params_gmm_target["max_g"] = max_g_c1
+        prop_c1_minDCFs = []
+        for prop_c1 in prop_c1_vec:
+            print(f"----- {prop_name}_c0 = {prop_c0}, {prop_name}_c1 = {prop_c1} -----")
+            params_gmm_target[prop_name] = prop_c1
 
             gmm_classifier = Classifiers.GMMClassifier.GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
             minDCFs = evaluate_model(gmm_classifier.DTR, LTR, PCA_values, K, gmm_classifier, scaled_workPoint)
 
-            max_g_c1_minDCFs.append(minDCFs[0])
-        max_g_minDCFs[max_g_c0] = max_g_c1_minDCFs
+            prop_c1_minDCFs.append(minDCFs[0])
+        prop_minDCFs[prop_c0] = prop_c1_minDCFs
 
-    return max_g_minDCFs
+    return prop_minDCFs
 
 
 def get_sigma_type_as_string(diagonal: bool, tied: bool):
