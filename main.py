@@ -6,6 +6,7 @@ from Classifiers.LogisticRegression import LogRegClass
 from Classifiers.MVGClassifier import MVGClassifier
 from Classifiers.NaiveMVGClassifier import NaiveMVGClassifier
 from Classifiers.TiedMVGClassifier import TiedMVGClassifier
+from Classifiers.GMMClassifier import GMMClassifier
 
 if __name__ == '__main__':
     # --- Load the dataset ---
@@ -169,7 +170,8 @@ if __name__ == '__main__':
 
         print(f"----- SVM poly 2 re-balanced - c={c} -----")
         Util.svm_cross_val_graphs(K_svm_vec, C_vec, DTR, LTR, PCA_values_reduced, K, scaled_workPoint, True,
-                                  colors, svm_type_label=f"SVM poly 2 re-balanced - c={c}", kernel_type="poly", d=2, c=c)
+                                  colors, svm_type_label=f"SVM poly 2 re-balanced - c={c}", kernel_type="poly", d=2,
+                                  c=c)
 
     C_vec = [1e-5, 1e-4, 1e-3, 1e-2]
     c_vec = [1, 10]
@@ -212,31 +214,79 @@ if __name__ == '__main__':
     }
 
     max_g_c0_vec = [1, 2, 4, 8, 16, 32]
-    max_g_c1_vec = [1, 2, 4]
+    # For visualization purposes, split max_g_c1_vec in 2 and run with max_g_c1_vec containing only 3 values at a time
+    max_g_c1_vec = [1, 2, 4, 8, 16, 32]
     PCA_values = [None]
 
     print(f"----- GMM - target 'g' components: {max_g_c1_vec} -----")
-    max_g_minDCFs = Util.gmm_grid_search_max_g(DTR, LTR,
-                                               max_g_c0_vec, max_g_c1_vec,
-                                               params_gmm_target,
-                                               params_gmm_non_target,
-                                               PCA_values, K,
-                                               scaled_workPoint)
+    max_g_minDCFs = Util.gmm_grid_search_one_prop(DTR, LTR,
+                                                  max_g_c0_vec, max_g_c1_vec,
+                                                  "max_g",
+                                                  params_gmm_target,
+                                                  params_gmm_non_target,
+                                                  PCA_values, K,
+                                                  scaled_workPoint)
     sigma_type_t = Util.get_sigma_type_as_string(params_gmm_target["diagonal"], params_gmm_target["tied"])
     sigma_type_nt = Util.get_sigma_type_as_string(params_gmm_non_target["diagonal"], params_gmm_non_target["tied"])
-    Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
+    Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, 'Target class "g" components',
+                                 "max_g", f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
                                  PCA_values[0])
 
-    max_g_c1_vec = [8, 16, 32]
-    print(f"----- GMM - target 'g' components: {max_g_c1_vec} -----")
-    max_g_minDCFs = Util.gmm_grid_search_max_g(DTR, LTR,
-                                               max_g_c0_vec, max_g_c1_vec,
-                                               params_gmm_target,
-                                               params_gmm_non_target,
-                                               PCA_values, K,
-                                               scaled_workPoint)
+    # Best number of components "max_g"
+    params_gmm_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 1,
+        "diagonal": False,
+        "tied": False
+    }
 
+    params_gmm_non_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 4,
+        "diagonal": False,
+        "tied": False
+    }
+
+    # Evaluate dimensionality reduction
+    print("----- GMM classifier -----")
+    PCA_values = [None, 10, 9, 8, 7]
+    gmmClassifier = GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
+    Util.evaluate_model(gmmClassifier.DTR, LTR, PCA_values, K, gmmClassifier, scaled_workPoint)
+
+    # Find the best alpha for each GMM
+    print(f"----- GMM - alpha grid search -----")
+    params_gmm_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 16,
+        "diagonal": True,
+        "tied": True
+    }
+
+    params_gmm_non_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 8,
+        "diagonal": True,
+        "tied": True
+    }
+    PCA_values = [7]
     sigma_type_t = Util.get_sigma_type_as_string(params_gmm_target["diagonal"], params_gmm_target["tied"])
     sigma_type_nt = Util.get_sigma_type_as_string(params_gmm_non_target["diagonal"], params_gmm_non_target["tied"])
-    Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
+
+    alpha_vec_c0 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1]
+    # For visualization purposes, split alpha_vec_1 in 4 and run with alpha_vec_c1 containing only 2 values at a time
+    alpha_vec_c1 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1]
+    alpha_minDCFs = Util.gmm_grid_search_one_prop(DTR, LTR,
+                                                  alpha_vec_c0, alpha_vec_c1,
+                                                  "alpha",
+                                                  params_gmm_target,
+                                                  params_gmm_non_target,
+                                                  PCA_values, K,
+                                                  scaled_workPoint)
+    Plots.plot_gmm_g_grid_search(alpha_minDCFs, alpha_vec_c1, 'Target alpha',
+                                 "alpha", f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
                                  PCA_values[0])
+
