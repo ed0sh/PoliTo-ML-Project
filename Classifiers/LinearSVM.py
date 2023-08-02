@@ -77,14 +77,16 @@ class LinearSVM(ClassifiersInterface):
 
         return alphaOpt, wh
 
-    def classify(self, DTE):
+    def classify(self, DTE, workpoint: Util.WorkPoint):
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
 
         Dth = numpy.vstack([DTE, self.K * numpy.ones(DTE.shape[1])])
         S = numpy.dot(self.wh.T, Dth)
         self.scores = S.ravel()
-        predicted = (S > 0).astype(int)
+
+        t = - numpy.log(workpoint.effective_prior() / (1 - workpoint.effective_prior()))
+        predicted = (S > t).astype(int)
 
         return predicted
 
