@@ -519,7 +519,8 @@ def svm_cross_val_graphs(
                 color=colors[(ki * len(PCA_values)) + i],
                 label=f"PCA={m} - K={K_svm}",
                 title=f"{svm_type_label}",
-                x_scale="log"
+                x_scale="log",
+                y_scale="linear"
             )
     Plots.show_plot()
 

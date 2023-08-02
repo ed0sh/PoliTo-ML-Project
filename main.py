@@ -47,7 +47,8 @@ if __name__ == '__main__':
         y_label="Fraction of explained variance",
         color='green',
         title=f"PCA vs. Fraction of explained variance",
-        x_scale="linear"
+        x_scale="linear",
+        y_scale="linear"
     )
 
     # Acceptable values are 7, 8 and 9 as they retain at least 90% of the dataset variance
