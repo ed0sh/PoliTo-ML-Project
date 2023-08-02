@@ -12,13 +12,15 @@ def plot_roc_curve(FPRs: numpy.array, TPRs: numpy.array):
     plt.show()
 
 
-def plot_bayes_error(effPriorLogOdds: numpy.array, DCFs: numpy.array, minDCFs: numpy.array):
+def plot_bayes_error_plot(effPriorLogOdds, DCFs, minDCFs, model_name):
     plt.figure()
     plt.plot(effPriorLogOdds, DCFs, label='DCF', color='r')
     plt.plot(effPriorLogOdds, minDCFs, label='min DCF', color='b')
     plt.legend()
     plt.ylim([0, 1.1])
     plt.xlim([-3, 3])
+    plt.xlabel("log( p / (1-p) )")
+    plt.title(model_name)
     plt.show()
 
 

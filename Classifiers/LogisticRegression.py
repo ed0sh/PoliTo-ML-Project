@@ -58,7 +58,7 @@ class LogRegClass(ClassifiersInterface):
 
         for lam in lambdas:
             logRegObj = LogRegClass(DTR, LTR, lam)
-            _, _, minDCF = Util.k_folds(DTR, LTR, 5, logRegObj, workPoint)
+            _, _, minDCF, _, _ = Util.k_folds(DTR, LTR, 5, logRegObj, workPoint)
 
             if minDCF < bestMinDCF:
                 selectedLambda = lam
@@ -74,7 +74,7 @@ class LogRegClass(ClassifiersInterface):
 
         for lam in lambdas:
             logRegObj = LogRegClass(self.DTR, self.LTR, lam)
-            _, _, minDCF = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
+            _, _, minDCF, _, _ = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
 
             if minDCF < bestMinDCF:
                 selectedLambda = lam

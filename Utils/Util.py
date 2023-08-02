@@ -119,6 +119,8 @@ def compute_minDCF(LTE, SPost, workPoint):
     idx = numpy.argsort(SPost.ravel())
     sortL = LTE[idx]
     MinDCF = 100
+    FNRs = []
+    FPRs = []
     startingMatrix = confusion_matrix(LTE, Discriminant_ratio(-math.inf, SPost))
     for val in sortL:
         if val == 0:
@@ -127,10 +129,13 @@ def compute_minDCF(LTE, SPost, workPoint):
         else:
             startingMatrix[0][1] = startingMatrix[0][1] + 1
             startingMatrix[1][1] = startingMatrix[1][1] - 1
+        FNRs.append(startingMatrix[0][1] / (startingMatrix[0][1] + startingMatrix[1][1]))
+        FPRs.append(startingMatrix[1][0] / (startingMatrix[1][0] + startingMatrix[0][0]))
+
         _, tempDCF = Compute_DCF(startingMatrix, workPoint)
         if (tempDCF < MinDCF):
             MinDCF = tempDCF
-    return MinDCF
+    return MinDCF, FNRs, FPRs
 
 
 def Discriminant_ratio(threshold, SPost):
@@ -279,13 +284,13 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
         scores.extend(modelObject.get_scores())
         predictions.extend(predicted)
         labels.extend(labels_test_set)
-        minDCFs.append(compute_minDCF(labels_test_set, modelObject.get_scores(), workPoint))
+        minDCFs.append(compute_minDCF(labels_test_set, modelObject.get_scores(), workPoint)[0])
 
     mean_err_rate = numpy.array(error_rates).mean()
     mean_DCF = numpy.array(DCFs).mean()
     minDCF_ = numpy.array(minDCFs).min()
-    minDCF = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint)  # TODO: check if this is correct
-    return mean_err_rate, mean_DCF, minDCF
+    minDCF, FNRs, FPRs = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint)  # TODO: check if this is correct
+    return mean_err_rate, mean_DCF, minDCF, (numpy.array(scores), numpy.array(labels)), (FNRs, FPRs)
 
 
 def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
@@ -469,12 +474,50 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
             modelObject.optimize_lambda_inplace(scaled_workPoint)
             print(f"λ: {modelObject.lam}")
 
-        error, DCF, minDCF = k_folds(reduced_DTR, LTR, K, modelObject, scaled_workPoint)
+        error, DCF, minDCF, _, _ = k_folds(reduced_DTR, LTR, K, modelObject, scaled_workPoint)
         minDCF = round(minDCF, 3)
+        DCF = round(DCF, 3)
         print(f"{m}\t|\t{minDCF}")
         minDCF_values.append(minDCF)
         DCF_values.append(DCF)
     return minDCF_values, DCF_values
+
+
+def evaluate_calibration(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint):
+    if PCA_value is not None:
+        DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+    _, _, _, (scores, labels), _ = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
+    bayes_errors(scores, labels, numpy.linspace(-3, 3, 21), modelObject.__str__())
+
+
+def DET_plot(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, fig, color):
+    if PCA_value is not None:
+        DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+    _, _, _, _, (FNRs, FPRs) = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
+    Plots.plot_simple_plot_no_show(fig, FPRs, FNRs,
+                                   "False Positive Ratio",
+                                   "False Negative Ratio",
+                                   color,
+                                   modelObject.__str__(),
+                                   "DET Plot",
+                                   "log",
+                                   "log"
+                                   )
+
+
+def bayes_errors(llrs, LTE, effPriorLogOdds, model_name):
+    DCFs = []
+    minDCFs = []
+    for p in effPriorLogOdds:
+        pi = 1 / (1 + numpy.exp(-p))
+
+        conf_matrix = confusion_matrix(LTE, (llrs > 0).astype(int).ravel())
+        DCF = Compute_Anormalized_DCF(conf_matrix, pi, 1, 1)
+        DCF = Compute_Normalized_DCF(DCF, pi, 1, 1)
+        DCFs.append(DCF)
+        minDCFs.append(compute_minDCF(LTE, llrs, WorkPoint(pi, 1, 1))[0])
+
+    Plots.plot_bayes_error_plot(effPriorLogOdds, DCFs, minDCFs, model_name)
 
 
 def svm_cross_val_graphs(
