@@ -296,14 +296,16 @@ if __name__ == '__main__':
 
     # --- Calibration evaluation ---
     PCA_value = 7
+    Plots.new_figure()
     gmmClassifier = GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
-    Util.evaluate_calibration(gmmClassifier.DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint)
+    Util.bayes_error_calibration_evaluation(gmmClassifier.DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, "blue")
 
     polySVM = KernelSVM(DTR, LTR, d=2, c=10, C=1e-2, K=10, kernel_type="poly")
-    Util.evaluate_calibration(polySVM.DTR, LTR, PCA_value, K, polySVM, scaled_workPoint)
+    Util.bayes_error_calibration_evaluation(polySVM.DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, "red")
 
     rbfSVM = KernelSVM(DTR, LTR, gamma=numpy.exp(-5), K=0.01, C=0.1, kernel_type="rbf")
-    Util.evaluate_calibration(rbfSVM.DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint)
+    Util.bayes_error_calibration_evaluation(rbfSVM.DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, "green")
+    Plots.show_plot()
 
     fig = Plots.new_figure()
     Util.DET_plot(DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, fig, "blue")

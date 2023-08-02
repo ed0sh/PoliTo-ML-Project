@@ -483,11 +483,24 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
     return minDCF_values, DCF_values
 
 
-def evaluate_calibration(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint):
+def bayes_error_calibration_evaluation(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, color):
     if PCA_value is not None:
         DTR = Preproccessing.PCA(DTR, PCA_value)[0]
     _, _, _, (scores, labels), _ = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
-    bayes_errors(scores, labels, numpy.linspace(-3, 3, 21), modelObject.__str__())
+
+    effPriorLogOdds = numpy.linspace(-3, 3, 100)
+    DCFs = []
+    minDCFs = []
+    for p in effPriorLogOdds:
+        eff_pi = 1 / (1 + numpy.exp(-p))
+
+        conf_matrix = confusion_matrix(labels, (scores > -p).astype(int).ravel())
+        DCF = Compute_Anormalized_DCF(conf_matrix, eff_pi, 1, 1)
+        DCF = Compute_Normalized_DCF(DCF, eff_pi, 1, 1)
+        DCFs.append(DCF)
+        minDCFs.append(compute_minDCF(labels, scores, WorkPoint(eff_pi, 1, 1))[0])
+
+    Plots.plot_bayes_error_plot_no_show(effPriorLogOdds, DCFs, minDCFs, modelObject.__str__(), color)
 
 
 def DET_plot(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, fig, color):
@@ -503,22 +516,6 @@ def DET_plot(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, fig, color):
                                    "log",
                                    "log"
                                    )
-
-
-def bayes_errors(llrs, LTE, effPriorLogOdds, model_name):
-    DCFs = []
-    minDCFs = []
-    for p in effPriorLogOdds:
-        pi = 1 / (1 + numpy.exp(-p))
-
-        conf_matrix = confusion_matrix(LTE, (llrs > 0).astype(int).ravel())
-        DCF = Compute_Anormalized_DCF(conf_matrix, pi, 1, 1)
-        DCF = Compute_Normalized_DCF(DCF, pi, 1, 1)
-        DCFs.append(DCF)
-        minDCFs.append(compute_minDCF(LTE, llrs, WorkPoint(pi, 1, 1))[0])
-
-    Plots.plot_bayes_error_plot(effPriorLogOdds, DCFs, minDCFs, model_name)
-
 
 def svm_cross_val_graphs(
         K_svm_vec: numpy.array,
