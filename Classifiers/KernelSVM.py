@@ -6,7 +6,7 @@ from Utils import Util
 
 
 class KernelSVM(ClassifiersInterface):
-    def __init__(self, DTR: numpy.array, LTR: numpy.array, C: float, K: int, d=2, c=0, gamma=1, kernel_type="poly"):
+    def __init__(self, DTR: numpy.array, LTR: numpy.array, C: float, K: float, d=2, c=0, gamma=1, kernel_type="poly"):
         self.DTR = DTR
         self.LTR = LTR
         self.C = C
@@ -99,3 +99,8 @@ class KernelSVM(ClassifiersInterface):
         self.trained = False
         self.balanced_C = None
 
+    def __str__(self):
+        if self.kernel == self.poly_kernel:
+            return f"Kernel Poly {self.d} SVM"
+        elif self.kernel == self.RBF_kernel:
+            return f"Kernel RBF SVM"

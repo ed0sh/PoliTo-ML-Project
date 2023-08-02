@@ -72,3 +72,6 @@ class GMMClassifier(ClassifiersInterface):
         self.gmms = [GMM_nt, GMM_t]
 
         self.trained = False
+
+    def __str__(self):
+        return "GMM Classifier"
