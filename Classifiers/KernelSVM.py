@@ -76,13 +76,14 @@ class KernelSVM(ClassifiersInterface):
 
         return alphaOpt
 
-    def classify(self, DTE):
+    def classify(self, DTE, workpoint: Util.WorkPoint):
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
 
         S = (Util.vcol(self.alpha * self.ZTR) * self.kernel(self.DTR, DTE)).sum(axis=0)
         self.scores = S.ravel()
-        predicted = (S > 0).astype(int)
+        t = - numpy.log(workpoint.effective_prior() / (1 - workpoint.effective_prior()))
+        predicted = (S > t).astype(int)
 
         return predicted
 

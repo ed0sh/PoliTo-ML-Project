@@ -272,7 +272,7 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
             modelObject.rebalance(workPoint)
 
         modelObject.train()
-        predicted = modelObject.classify(data_test_set)
+        predicted = modelObject.classify(data_test_set, workPoint)
         err_rate, DCF = evaluate(predicted, labels_test_set, workPoint)
         error_rates.append(err_rate)
         DCFs.append(DCF)

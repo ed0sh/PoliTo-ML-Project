@@ -32,12 +32,14 @@ class LogRegClass(ClassifiersInterface):
         self.w, self.b = Util.vcol(xOpt[0:self.nFeatures]), xOpt[-1]
         self.trained = True
 
-    def classify(self, DTE: numpy.array) -> numpy.array:
+    def classify(self, DTE: numpy.array, workpoint: Util.WorkPoint) -> numpy.array:
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
         Score = numpy.dot(self.w.T, DTE) + self.b
         self.scores = Score.ravel()
-        PLabel = (Score > 0).astype(int).ravel()
+
+        t = - numpy.log(workpoint.effective_prior() / (1 - workpoint.effective_prior()))
+        PLabel = (Score > t).astype(int).ravel()
         return PLabel
 
     def update_dataset(self, DTR: numpy.array, LTR: numpy.array):
@@ -58,7 +60,7 @@ class LogRegClass(ClassifiersInterface):
 
         for lam in lambdas:
             logRegObj = LogRegClass(DTR, LTR, lam)
-            _, _, minDCF = Util.k_folds(DTR, LTR, 5, logRegObj, workPoint)
+            _, _, minDCF, _, _ = Util.k_folds(DTR, LTR, 5, logRegObj, workPoint)
 
             if minDCF < bestMinDCF:
                 selectedLambda = lam
@@ -74,7 +76,7 @@ class LogRegClass(ClassifiersInterface):
 
         for lam in lambdas:
             logRegObj = LogRegClass(self.DTR, self.LTR, lam)
-            _, _, minDCF = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
+            _, _, minDCF, _, _ = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
 
             if minDCF < bestMinDCF:
                 selectedLambda = lam

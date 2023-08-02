@@ -15,7 +15,7 @@ class MultivariateGaussianClass(ClassifiersInterface):
         self.hCls = {}
         self.trained = False
 
-    def classify(self, DTE: numpy.array):
+    def classify(self, DTE: numpy.array, workpoint: Util.WorkPoint):
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
 
@@ -39,7 +39,8 @@ class MultivariateGaussianClass(ClassifiersInterface):
 
         P = numpy.exp(logP)
 
-        predicted = numpy.argmax(P, axis=0)
+        t = - numpy.log(workpoint.effective_prior() / (1 - workpoint.effective_prior()))
+        predicted = (self.scores > t).astype(int)
         return predicted
 
     def train(self):

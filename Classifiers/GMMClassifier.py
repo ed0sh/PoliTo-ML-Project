@@ -2,6 +2,7 @@ import numpy
 
 from Classifiers.GMM import GMM
 from Classifiers.ClassifiersInterface import ClassifiersInterface
+from Utils import Util
 
 
 class GMMClassifier(ClassifiersInterface):
@@ -32,7 +33,7 @@ class GMMClassifier(ClassifiersInterface):
                     self.params_gmm_target['tied'])
         self.gmms = [GMM_nt, GMM_t]
 
-    def classify(self, DTE: numpy.array):
+    def classify(self, DTE: numpy.array, workpoint: Util.WorkPoint):
         if not self.trained:
             raise RuntimeError('Classifier is not trained yet')
 
@@ -44,7 +45,8 @@ class GMMClassifier(ClassifiersInterface):
         if len(self.gmms) == 2:
             self.scores = log_dens[1] - log_dens[0]
 
-        predicted = numpy.argmax(log_dens, axis=0)
+        t = - numpy.log(workpoint.effective_prior() / (1 - workpoint.effective_prior()))
+        predicted = (self.scores > t).astype(int)
         return predicted
 
     def train(self):
