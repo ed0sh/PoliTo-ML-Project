@@ -1,13 +1,11 @@
 import numpy
 
-from Utils import Util
-
 
 class ClassifiersInterface:
     def train(self):
         pass
 
-    def classify(self, DTE: numpy.array, workpoint: Util.WorkPoint) -> numpy.array:
+    def classify(self, DTE: numpy.array, workpoint) -> numpy.array:
         pass
 
     def update_dataset(self, DTR: numpy.array, LTR: numpy.array):

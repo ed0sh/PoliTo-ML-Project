@@ -240,8 +240,8 @@ def split_k_folds(DTR: numpy.array, LTR: numpy.array, K: int, seed=0):
     return d_result, l_result
 
 
-def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: ClassifiersInterface, workPoint: WorkPoint):
-    d_folds, l_folds = split_k_folds(DTR, LTR, K)
+def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: ClassifiersInterface, workPoint: WorkPoint, seed=0):
+    d_folds, l_folds = split_k_folds(DTR, LTR, K, seed)
     DCFs = []
     minDCFs = []
     error_rates = []
@@ -289,7 +289,8 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
     mean_err_rate = numpy.array(error_rates).mean()
     mean_DCF = numpy.array(DCFs).mean()
     minDCF_ = numpy.array(minDCFs).min()
-    minDCF, FNRs, FPRs = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint)  # TODO: check if this is correct
+    minDCF, FNRs, FPRs = compute_minDCF(numpy.array(labels), numpy.array(scores),
+                                        workPoint)  # TODO: check if this is correct
     return mean_err_rate, mean_DCF, minDCF, (numpy.array(scores), numpy.array(labels)), (FNRs, FPRs)
 
 
@@ -483,11 +484,15 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
     return minDCF_values, DCF_values
 
 
-def bayes_error_calibration_evaluation(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, color):
+def bayes_error_calibration_evaluation_k_folds(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, color):
     if PCA_value is not None:
         DTR = Preproccessing.PCA(DTR, PCA_value)[0]
     _, _, _, (scores, labels), _ = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
 
+    bayes_error_calibration_evaluation(scores, labels, modelObject, color)
+
+
+def bayes_error_calibration_evaluation(scores, labels, modelObject, color):
     effPriorLogOdds = numpy.linspace(-3, 3, 100)
     DCFs = []
     minDCFs = []
@@ -503,6 +508,39 @@ def bayes_error_calibration_evaluation(DTR, LTR, PCA_value, K, modelObject, scal
     Plots.plot_bayes_error_plot_no_show(effPriorLogOdds, DCFs, minDCFs, modelObject.__str__(), color)
 
 
+def score_calibration_k_folds(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, color):
+    if PCA_value is not None:
+        DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+    _, _, _, (scores, labels), _ = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
+
+    return score_calibration(scores, labels, K, modelObject, scaled_workPoint, color)
+
+
+def score_calibration(scores, labels, K, modelObject, scaled_workPoint, color):
+    scores = vrow(scores)
+    logReg = Classifiers.LogisticRegression.LogRegClass.create_with_optimized_lambda(scores, labels, scaled_workPoint,
+                                                                                     scaled_workPoint.effective_prior())
+
+    _, _, _, (new_scores, calibrated_scores_labels), _ = k_folds(scores, labels, K, logReg, scaled_workPoint, seed=12)
+    calibrated_scores = new_scores - numpy.log(scaled_workPoint.effective_prior() / (1 - scaled_workPoint.effective_prior()))
+
+    effPriorLogOdds = numpy.linspace(-3, 3, 100)
+    DCFs = []
+    minDCFs = []
+    for p in effPriorLogOdds:
+        eff_pi = 1 / (1 + numpy.exp(-p))
+
+        conf_matrix = confusion_matrix(calibrated_scores_labels.ravel(), (calibrated_scores > -p).astype(int).ravel())
+        DCF = Compute_Anormalized_DCF(conf_matrix, eff_pi, 1, 1)
+        DCF = Compute_Normalized_DCF(DCF, eff_pi, 1, 1)
+        DCFs.append(DCF)
+        minDCFs.append(compute_minDCF(calibrated_scores_labels.ravel(), calibrated_scores, WorkPoint(eff_pi, 1, 1))[0])
+
+    Plots.plot_bayes_error_plot_no_show(effPriorLogOdds, DCFs, minDCFs, f"{modelObject.__str__()} calibrated", color)
+
+    return calibrated_scores
+
+
 def DET_plot(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, fig, color):
     if PCA_value is not None:
         DTR = Preproccessing.PCA(DTR, PCA_value)[0]
@@ -516,6 +554,7 @@ def DET_plot(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, fig, color):
                                    "log",
                                    "log"
                                    )
+
 
 def svm_cross_val_graphs(
         K_svm_vec: numpy.array,
