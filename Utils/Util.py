@@ -238,10 +238,8 @@ def split_k_folds(DTR: numpy.array, LTR: numpy.array, K: int, seed=0):
 def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: ClassifiersInterface, workPoint: WorkPoint):
     d_folds, l_folds = split_k_folds(DTR, LTR, K)
     DCFs = []
-    minDCFs = []
     error_rates = []
     scores = []
-    predictions = []
     labels = []
     for i in range(len(d_folds)):
         data_test_set = d_folds[i]
@@ -277,15 +275,12 @@ def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: Classifiers
         error_rates.append(err_rate)
         DCFs.append(DCF)
         scores.extend(modelObject.get_scores())
-        predictions.extend(predicted)
         labels.extend(labels_test_set)
-        minDCFs.append(compute_minDCF(labels_test_set, modelObject.get_scores(), workPoint))
 
     mean_err_rate = numpy.array(error_rates).mean()
     mean_DCF = numpy.array(DCFs).mean()
-    minDCF_ = numpy.array(minDCFs).min()
-    minDCF = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint)  # TODO: check if this is correct
-    return mean_err_rate, mean_DCF, minDCF
+    minDCF, FNRs, FPRs = compute_minDCF(numpy.array(labels), numpy.array(scores), workPoint)
+    return mean_err_rate, mean_DCF, minDCF, (numpy.array(scores), numpy.array(labels)), (FNRs, FPRs)
 
 
 def evaluate(PLabel: numpy.array, LTE: numpy.array, workPoint: WorkPoint):
