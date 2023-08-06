@@ -518,27 +518,36 @@ def score_calibration_k_folds(DTR, LTR, PCA_value, K, modelObject, scaled_workPo
 
 def score_calibration(scores, labels, K, modelObject, scaled_workPoint, color):
     scores = vrow(scores)
-    logReg = Classifiers.LogisticRegression.LogRegClass.create_with_optimized_lambda(scores, labels, scaled_workPoint,
-                                                                                     scaled_workPoint.effective_prior())
 
-    _, _, _, (new_scores, calibrated_scores_labels), _ = k_folds(scores, labels, K, logReg, scaled_workPoint, seed=12)
-    calibrated_scores = new_scores - numpy.log(scaled_workPoint.effective_prior() / (1 - scaled_workPoint.effective_prior()))
+    # Shuffle the scores
+    numpy.random.seed(4131)
+    idx = numpy.random.permutation(scores.shape[1])
+    shuffled_scores = scores[:, idx]
+    shuffled_labels = labels[idx]
 
-    effPriorLogOdds = numpy.linspace(-3, 3, 100)
-    DCFs = []
-    minDCFs = []
-    for p in effPriorLogOdds:
-        eff_pi = 1 / (1 + numpy.exp(-p))
+    logReg = Classifiers.LogisticRegression.LogRegClass(shuffled_scores, shuffled_labels,
+                                                        l=1e1,
+                                                        prior=scaled_workPoint.effective_prior())
 
-        conf_matrix = confusion_matrix(calibrated_scores_labels.ravel(), (calibrated_scores > -p).astype(int).ravel())
-        DCF = Compute_Anormalized_DCF(conf_matrix, eff_pi, 1, 1)
-        DCF = Compute_Normalized_DCF(DCF, eff_pi, 1, 1)
-        DCFs.append(DCF)
-        minDCFs.append(compute_minDCF(calibrated_scores_labels.ravel(), calibrated_scores, WorkPoint(eff_pi, 1, 1))[0])
+    # Find the best lambda according to the minimization of the distance between DCF and minDCF
+    selectedLambda = 1e1
+    lambdas = [1e1, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]
+    bestMinDCF = 10
 
-    Plots.plot_bayes_error_plot_no_show(effPriorLogOdds, DCFs, minDCFs, f"{modelObject.__str__()} calibrated", color)
+    for lam in lambdas:
+        logRegObj = Classifiers.LogisticRegression.LogRegClass(shuffled_scores, shuffled_labels, lam, logReg.prior)
+        _, DCF, minDCF, _, _ = k_folds(shuffled_scores, shuffled_labels, 5, logRegObj, scaled_workPoint)
 
-    return calibrated_scores
+        if (DCF - minDCF) < bestMinDCF:
+            selectedLambda = lam
+            bestMinDCF = (DCF - minDCF)
+    logReg.lam = selectedLambda
+    
+    _, _, _, (new_scores, calibrated_scores_labels), _ = k_folds(scores, labels, K, logReg, scaled_workPoint, seed=134)
+
+    bayes_error_calibration_evaluation(new_scores, calibrated_scores_labels, modelObject, color)
+
+    return new_scores, calibrated_scores_labels
 
 
 def DET_plot(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, fig, color):

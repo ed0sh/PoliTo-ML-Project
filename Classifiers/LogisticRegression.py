@@ -32,8 +32,8 @@ class LogRegClass(ClassifiersInterface):
         w = Util.vcol(v[0: self.nFeatures])
         b = v[-1]
         scores = numpy.dot(w.T, self.DTR) + b
-        t_scores = scores[:, self.LTR == 1]
-        nt_scores = scores[:, self.LTR == 0]
+        t_scores = scores[:, self.LTR == 1] + numpy.log(self.prior / (1 - self.prior))
+        nt_scores = scores[:, self.LTR == 0] + numpy.log(self.prior / (1 - self.prior))
 
         t_loss_per_sample = self.prior * numpy.logaddexp(0, -t_scores)
         nt_loss_per_sample = (1 - self.prior) * numpy.logaddexp(0, nt_scores)
