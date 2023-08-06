@@ -6,7 +6,7 @@ from Utils import Util
 
 
 class LogRegClass(ClassifiersInterface):
-    def __init__(self, DTR: numpy.array, LTR: numpy.array, l=1e-3):
+    def __init__(self, DTR: numpy.array, LTR: numpy.array, l=1e-3, prior=None):
         self.b = None
         self.w = None
         self.DTR = DTR
@@ -16,6 +16,7 @@ class LogRegClass(ClassifiersInterface):
         self.nFeatures = DTR.shape[0]
         self.trained = False
         self.quadratic = False
+        self.prior = prior
 
     def logreg_obj(self, v):
         # Compute and return the objective function value. You can retrieve all required information from self.DTR, self.LTR, self.l
@@ -26,9 +27,26 @@ class LogRegClass(ClassifiersInterface):
         loss = 0.5 * self.lam * numpy.linalg.norm(w) ** 2 + loss_per_sample.mean()
         return loss
 
+    def prior_weighted_logreg_obj(self, v):
+        # Compute and return the objective function value. You can retrieve all required information from self.DTR, self.LTR, self.l
+        w = Util.vcol(v[0: self.nFeatures])
+        b = v[-1]
+        scores = numpy.dot(w.T, self.DTR) + b
+        t_scores = scores[:, self.LTR == 1] + numpy.log(self.prior / (1 - self.prior))
+        nt_scores = scores[:, self.LTR == 0] + numpy.log(self.prior / (1 - self.prior))
+
+        t_loss_per_sample = self.prior * numpy.logaddexp(0, -t_scores)
+        nt_loss_per_sample = (1 - self.prior) * numpy.logaddexp(0, nt_scores)
+
+        loss = 0.5 * self.lam * numpy.linalg.norm(w) ** 2 + t_loss_per_sample.mean() + nt_loss_per_sample.mean()
+        return loss
+
     def train(self):
         x0 = numpy.zeros(self.DTR.shape[0] + 1)
-        xOpt, fOpt, d = scipy.optimize.fmin_l_bfgs_b(self.logreg_obj, x0=x0, approx_grad=True)
+        if self.prior is None:
+            xOpt, fOpt, d = scipy.optimize.fmin_l_bfgs_b(self.logreg_obj, x0=x0, approx_grad=True)
+        else:
+            xOpt, fOpt, d = scipy.optimize.fmin_l_bfgs_b(self.prior_weighted_logreg_obj, x0=x0, approx_grad=True)
         self.w, self.b = Util.vcol(xOpt[0:self.nFeatures]), xOpt[-1]
         self.trained = True
 
@@ -52,21 +70,21 @@ class LogRegClass(ClassifiersInterface):
         self.trained = False
 
     @staticmethod
-    def create_with_optimized_lambda(DTR: numpy.array, LTR: numpy.array, workPoint: Util.WorkPoint) -> 'LogRegClass':
+    def create_with_optimized_lambda(DTR: numpy.array, LTR: numpy.array, workPoint: Util.WorkPoint, prior=None) -> 'LogRegClass':
 
         selectedLambda = 1e1
         lambdas = [1e1, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]
         bestMinDCF = 10
 
         for lam in lambdas:
-            logRegObj = LogRegClass(DTR, LTR, lam)
+            logRegObj = LogRegClass(DTR, LTR, lam, prior)
             _, _, minDCF, _, _ = Util.k_folds(DTR, LTR, 5, logRegObj, workPoint)
 
             if minDCF < bestMinDCF:
                 selectedLambda = lam
                 bestMinDCF = minDCF
 
-        return LogRegClass(DTR, LTR, selectedLambda)
+        return LogRegClass(DTR, LTR, selectedLambda, prior)
 
     def optimize_lambda_inplace(self, workPoint: Util.WorkPoint):
 
@@ -75,7 +93,7 @@ class LogRegClass(ClassifiersInterface):
         bestMinDCF = 10
 
         for lam in lambdas:
-            logRegObj = LogRegClass(self.DTR, self.LTR, lam)
+            logRegObj = LogRegClass(self.DTR, self.LTR, lam, self.prior)
             _, _, minDCF, _, _ = Util.k_folds(self.DTR, self.LTR, 5, logRegObj, workPoint)
 
             if minDCF < bestMinDCF:
@@ -93,3 +111,4 @@ class LogRegClass(ClassifiersInterface):
         Phi = numpy.hstack(Phi)
         self.DTR = Phi
         self.quadratic = True
+        self.nFeatures = self.DTR.shape[0]

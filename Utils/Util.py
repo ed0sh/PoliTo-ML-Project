@@ -119,6 +119,8 @@ def compute_minDCF(LTE, SPost, workPoint):
     idx = numpy.argsort(SPost.ravel())
     sortL = LTE[idx]
     MinDCF = 100
+    FNRs = []
+    FPRs = []
     startingMatrix = confusion_matrix(LTE, Discriminant_ratio(-math.inf, SPost))
     for val in sortL:
         if val == 0:
@@ -127,10 +129,13 @@ def compute_minDCF(LTE, SPost, workPoint):
         else:
             startingMatrix[0][1] = startingMatrix[0][1] + 1
             startingMatrix[1][1] = startingMatrix[1][1] - 1
+        FNRs.append(startingMatrix[0][1] / (startingMatrix[0][1] + startingMatrix[1][1]))
+        FPRs.append(startingMatrix[1][0] / (startingMatrix[1][0] + startingMatrix[0][0]))
+
         _, tempDCF = Compute_DCF(startingMatrix, workPoint)
         if (tempDCF < MinDCF):
             MinDCF = tempDCF
-    return MinDCF
+    return MinDCF, FNRs, FPRs
 
 
 def Discriminant_ratio(threshold, SPost):
@@ -235,8 +240,8 @@ def split_k_folds(DTR: numpy.array, LTR: numpy.array, K: int, seed=0):
     return d_result, l_result
 
 
-def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: ClassifiersInterface, workPoint: WorkPoint):
-    d_folds, l_folds = split_k_folds(DTR, LTR, K)
+def k_folds(DTR: numpy.array, LTR: numpy.array, K: int, modelObject: ClassifiersInterface, workPoint: WorkPoint, seed=0):
+    d_folds, l_folds = split_k_folds(DTR, LTR, K, seed)
     DCFs = []
     error_rates = []
     scores = []
@@ -464,12 +469,94 @@ def evaluate_model(DTR: numpy.array, LTR: numpy.array, PCA_values: list, K: int,
             modelObject.optimize_lambda_inplace(scaled_workPoint)
             print(f"λ: {modelObject.lam}")
 
-        error, DCF, minDCF = k_folds(reduced_DTR, LTR, K, modelObject, scaled_workPoint)
+        error, DCF, minDCF, _, _ = k_folds(reduced_DTR, LTR, K, modelObject, scaled_workPoint)
         minDCF = round(minDCF, 3)
+        DCF = round(DCF, 3)
         print(f"{m}\t|\t{minDCF}")
         minDCF_values.append(minDCF)
         DCF_values.append(DCF)
     return minDCF_values, DCF_values
+
+
+def bayes_error_calibration_evaluation_k_folds(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, color):
+    if PCA_value is not None:
+        DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+    _, _, _, (scores, labels), _ = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
+
+    bayes_error_calibration_evaluation(scores, labels, modelObject, color)
+
+
+def bayes_error_calibration_evaluation(scores, labels, modelObject, color):
+    effPriorLogOdds = numpy.linspace(-3, 3, 100)
+    DCFs = []
+    minDCFs = []
+    for p in effPriorLogOdds:
+        eff_pi = 1 / (1 + numpy.exp(-p))
+
+        conf_matrix = confusion_matrix(labels, (scores > -p).astype(int).ravel())
+        DCF = Compute_Anormalized_DCF(conf_matrix, eff_pi, 1, 1)
+        DCF = Compute_Normalized_DCF(DCF, eff_pi, 1, 1)
+        DCFs.append(DCF)
+        minDCFs.append(compute_minDCF(labels, scores, WorkPoint(eff_pi, 1, 1))[0])
+
+    Plots.plot_bayes_error_plot_no_show(effPriorLogOdds, DCFs, minDCFs, modelObject.__str__(), color)
+
+
+def score_calibration_k_folds(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, color):
+    if PCA_value is not None:
+        DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+    _, _, _, (scores, labels), _ = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
+
+    return score_calibration(scores, labels, K, modelObject, scaled_workPoint, color)
+
+
+def score_calibration(scores, labels, K, modelObject, scaled_workPoint, color):
+    scores = vrow(scores)
+
+    # Shuffle the scores
+    numpy.random.seed(4131)
+    idx = numpy.random.permutation(scores.shape[1])
+    shuffled_scores = scores[:, idx]
+    shuffled_labels = labels[idx]
+
+    logReg = Classifiers.LogisticRegression.LogRegClass(shuffled_scores, shuffled_labels,
+                                                        l=1e1,
+                                                        prior=scaled_workPoint.effective_prior())
+
+    # Find the best lambda according to the minimization of the distance between DCF and minDCF
+    selectedLambda = 1e1
+    lambdas = [1e1, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]
+    bestMinDCF = 10
+
+    for lam in lambdas:
+        logRegObj = Classifiers.LogisticRegression.LogRegClass(shuffled_scores, shuffled_labels, lam, logReg.prior)
+        _, DCF, minDCF, _, _ = k_folds(shuffled_scores, shuffled_labels, 5, logRegObj, scaled_workPoint)
+
+        if (DCF - minDCF) < bestMinDCF:
+            selectedLambda = lam
+            bestMinDCF = (DCF - minDCF)
+    logReg.lam = selectedLambda
+    
+    _, _, _, (new_scores, calibrated_scores_labels), _ = k_folds(scores, labels, K, logReg, scaled_workPoint, seed=134)
+
+    bayes_error_calibration_evaluation(new_scores, calibrated_scores_labels, modelObject, color)
+
+    return new_scores, calibrated_scores_labels
+
+
+def DET_plot(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, fig, color):
+    if PCA_value is not None:
+        DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+    _, _, _, _, (FNRs, FPRs) = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
+    Plots.plot_simple_plot_no_show(fig, FPRs, FNRs,
+                                   "False Positive Ratio",
+                                   "False Negative Ratio",
+                                   color,
+                                   modelObject.__str__(),
+                                   "DET Plot",
+                                   "log",
+                                   "log"
+                                   )
 
 
 def svm_cross_val_graphs(

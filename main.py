@@ -6,6 +6,7 @@ from Classifiers.LogisticRegression import LogRegClass
 from Classifiers.MVGClassifier import MVGClassifier
 from Classifiers.NaiveMVGClassifier import NaiveMVGClassifier
 from Classifiers.TiedMVGClassifier import TiedMVGClassifier
+from Classifiers.KernelSVM import KernelSVM
 from Classifiers.GMMClassifier import GMMClassifier
 
 if __name__ == '__main__':
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     pairs, mean = Util.evaluateClassCorrelation(DTR, LTR, 0.5)
     print(f"Feature Pairs over threshold : {pairs}\nCorrelation Mean : {mean}")
 
-    # Model evaluation
+    # --- Model evaluation ---
 
     print("----- MVG -----")
     logMVG = MVGClassifier(DTR, LTR, scaled_workPoint.pi)
@@ -291,3 +292,64 @@ if __name__ == '__main__':
                                  "alpha", f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
                                  PCA_values[0])
 
+    # Best values for alpha are the ones in the previous parameters definition
+
+    # --- Calibration evaluation ---
+
+    # Compare min DCFs with actual DCFs using training set and k-folds
+    PCA_values = [7]
+    gmmClassifier = GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
+    gmm_minDFCs, gmm_DCFs = Util.evaluate_model(gmmClassifier.DTR, LTR, PCA_values, K, gmmClassifier, scaled_workPoint)
+
+    polySVM = KernelSVM(DTR, LTR, d=2, c=10, C=1e-2, K=10, kernel_type="poly")
+    polySVM_minDFCs, polySVM_DCFs = Util.evaluate_model(polySVM.DTR, LTR, PCA_values, K, polySVM, scaled_workPoint)
+
+    rbfSVM = KernelSVM(DTR, LTR, gamma=numpy.exp(-5), K=0.01, C=0.1, kernel_type="rbf")
+    rbfSVM_minDFCs, rbfSVM_DCFs = Util.evaluate_model(rbfSVM.DTR, LTR, PCA_values, K, rbfSVM, scaled_workPoint)
+
+    print("PCA\t|\tminDCF\t|\tactDCF\t|\tModel")
+    print(f"7\t|\t{gmm_minDFCs[0]}\t|\t{gmm_DCFs[0]}\t|\tGMM")
+    print(f"7\t|\t{polySVM_minDFCs[0]}\t|\t{polySVM_DCFs[0]}\t|\tPoly-2-SVM")
+    print(f"7\t|\t{rbfSVM_minDFCs[0]}\t|\t{rbfSVM_DCFs[0]}\t|\tRBF-SVM")
+
+    # Compare min DCFs with actual DCFs on the test-set
+    gmmClassifier = GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
+    gmmClassifier.train()
+    predicted = gmmClassifier.classify(DTE, workPoint)
+    _, DCF = Util.evaluate(predicted, LTE, workPoint)
+    print(f"DCF: {DCF}")
+    print(f"minDCF: {Util.compute_minDCF(LTE, gmmClassifier.get_scores(), workPoint)[0]}")
+
+    polySVM = KernelSVM(DTR, LTR, d=2, c=10, C=1e-2, K=10, kernel_type="poly")
+    polySVM.train()
+    predicted = polySVM.classify(DTE, workPoint)
+    _, DCF = Util.evaluate(predicted, LTE, workPoint)
+    print(f"DCF: {DCF}")
+    print(f"minDCF: {Util.compute_minDCF(LTE, polySVM.get_scores(), workPoint)[0]}")
+
+    rbfSVM = KernelSVM(DTR, LTR, gamma=numpy.exp(-5), K=0.01, C=0.1, kernel_type="rbf")
+    rbfSVM.train()
+    predicted = rbfSVM.classify(DTE, workPoint)
+    _, DCF = Util.evaluate(predicted, LTE, workPoint)
+    print(f"DCF: {DCF}")
+    print(f"minDCF: {Util.compute_minDCF(LTE, rbfSVM.get_scores(), workPoint)[0]}")
+
+    # Plot an overall Bayes error plot
+    PCA_value = 7
+    Plots.new_figure()
+    gmmClassifier = GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
+    Util.bayes_error_calibration_evaluation_k_folds(gmmClassifier.DTR, LTR, PCA_value, K, gmmClassifier,
+                                                    scaled_workPoint, "blue")
+
+    polySVM = KernelSVM(DTR, LTR, d=2, c=10, C=1e-2, K=10, kernel_type="poly")
+    Util.bayes_error_calibration_evaluation_k_folds(polySVM.DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, "red")
+
+    rbfSVM = KernelSVM(DTR, LTR, gamma=numpy.exp(-5), K=0.01, C=0.1, kernel_type="rbf")
+    Util.bayes_error_calibration_evaluation_k_folds(rbfSVM.DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, "green")
+    Plots.show_plot()
+
+    fig = Plots.new_figure()
+    Util.DET_plot(DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, fig, "blue")
+    Util.DET_plot(polySVM.DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, fig, "red")
+    Util.DET_plot(rbfSVM.DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, fig, "green")
+    Plots.show_plot()
