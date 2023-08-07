@@ -1,7 +1,5 @@
 import numpy
 
-from Utils import Util
-
 
 class ClassifiersInterface:
     def train(self):
