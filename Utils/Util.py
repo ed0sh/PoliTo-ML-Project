@@ -586,7 +586,7 @@ def svm_cross_val_graphs(
 
             if rebalanced:
                 modelSVM.rebalance(scaled_workPoint)
-            minDCF_values = evaluate_model(DTR, LTR, PCA_values, K, modelSVM, scaled_workPoint)
+            minDCF_values = evaluate_model(DTR, LTR, PCA_values, K, modelSVM, scaled_workPoint)[0]
             C_results.append(minDCF_values)
 
         print(f"K: {K_svm}")
@@ -625,7 +625,7 @@ def gmm_grid_search_one_prop(DTR: numpy.array, LTR: numpy.array,
             params_gmm_target[prop_name] = prop_c1
 
             gmm_classifier = Classifiers.GMMClassifier.GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
-            minDCFs = evaluate_model(gmm_classifier.DTR, LTR, PCA_values, K, gmm_classifier, scaled_workPoint)
+            minDCFs = evaluate_model(gmm_classifier.DTR, LTR, PCA_values, K, gmm_classifier, scaled_workPoint)[0]
 
             prop_c1_minDCFs.append(minDCFs[0])
         prop_minDCFs[prop_c0] = prop_c1_minDCFs
