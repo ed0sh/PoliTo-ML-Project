@@ -6,6 +6,7 @@ from Classifiers.LogisticRegression import LogRegClass
 from Classifiers.MVGClassifier import MVGClassifier
 from Classifiers.NaiveMVGClassifier import NaiveMVGClassifier
 from Classifiers.TiedMVGClassifier import TiedMVGClassifier
+from Classifiers.LinearSVM import LinearSVM
 from Classifiers.KernelSVM import KernelSVM
 from Classifiers.GMMClassifier import GMMClassifier
 
