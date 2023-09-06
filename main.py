@@ -355,3 +355,35 @@ if __name__ == '__main__':
     Util.DET_plot(DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, fig, "red")
     Util.DET_plot(DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, fig, "green")
     Plots.show_plot()
+
+    # Get calibration models and plot calibrated Bayes error graph
+    Plots.new_figure()
+    gmm_calibration_model, kf_calibrated_scores_gmm, kf_shuffled_labels_gmm = Util.score_calibration_k_folds(
+        DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, "blue")
+
+    polySVM_calibration_model, kf_calibrated_scores_polySVM, kf_shuffled_labels_polySVM = Util.score_calibration_k_folds(
+        DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, "red")
+
+    rbfSVM_calibration_model, kf_calibrated_scores_rbfSVM, kf_shuffled_labels_rbfSVM = Util.score_calibration_k_folds(
+        DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, "green")
+    Plots.show_plot()
+
+    t = - numpy.log(scaled_workPoint.pi / (1 - scaled_workPoint.pi))
+
+    # GMM calibrated DCF and minDCF
+    predicted = (kf_calibrated_scores_gmm > t).astype(int)
+    _, DCF = Util.evaluate(predicted, kf_shuffled_labels_gmm, workPoint)
+    print(f"PCA - KF calibrated scores - GMM DCF: {DCF}")
+    print(f"PCA - KF calibrated scores - GMM minDCF: {Util.compute_minDCF(kf_shuffled_labels_gmm, kf_calibrated_scores_gmm, workPoint)[0]}")
+
+    # Poly SVM calibrated DCF and minDCF
+    predicted = (kf_calibrated_scores_polySVM > t).astype(int)
+    _, DCF = Util.evaluate(predicted, kf_shuffled_labels_polySVM, workPoint)
+    print(f"PCA - KF calibrated scores - Poly SVM DCF: {DCF}")
+    print(f"PCA - KF calibrated scores - Poly SVM minDCF: {Util.compute_minDCF(kf_shuffled_labels_polySVM, kf_calibrated_scores_polySVM, workPoint)[0]}")
+
+    # RBF SVM calibrated DCF and minDCF
+    predicted = (kf_calibrated_scores_rbfSVM > t).astype(int)
+    _, DCF = Util.evaluate(predicted, kf_shuffled_labels_rbfSVM, workPoint)
+    print(f"PCA - KF calibrated scores - RBF SVM DCF: {DCF}")
+    print(f"PCA - KF calibrated scores - RBF SVM minDCF: {Util.compute_minDCF(kf_shuffled_labels_rbfSVM, kf_calibrated_scores_rbfSVM, workPoint)[0]}")
