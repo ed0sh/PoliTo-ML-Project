@@ -313,28 +313,6 @@ if __name__ == '__main__':
     print(f"7\t|\t{polySVM_minDFCs[0]}\t|\t{polySVM_DCFs[0]}\t|\tPoly-2-SVM")
     print(f"7\t|\t{rbfSVM_minDFCs[0]}\t|\t{rbfSVM_DCFs[0]}\t|\tRBF-SVM")
 
-    # Compare min DCFs with actual DCFs on the test-set
-    gmmClassifier = GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
-    gmmClassifier.train()
-    predicted = gmmClassifier.classify(DTE, workPoint)
-    _, DCF = Util.evaluate(predicted, LTE, workPoint)
-    print(f"DCF: {DCF}")
-    print(f"minDCF: {Util.compute_minDCF(LTE, gmmClassifier.get_scores(), workPoint)[0]}")
-
-    polySVM = KernelSVM(DTR, LTR, d=2, c=10, C=1e-2, K=10, kernel_type="poly")
-    polySVM.train()
-    predicted = polySVM.classify(DTE, workPoint)
-    _, DCF = Util.evaluate(predicted, LTE, workPoint)
-    print(f"DCF: {DCF}")
-    print(f"minDCF: {Util.compute_minDCF(LTE, polySVM.get_scores(), workPoint)[0]}")
-
-    rbfSVM = KernelSVM(DTR, LTR, gamma=numpy.exp(-5), K=0.01, C=0.1, kernel_type="rbf")
-    rbfSVM.train()
-    predicted = rbfSVM.classify(DTE, workPoint)
-    _, DCF = Util.evaluate(predicted, LTE, workPoint)
-    print(f"DCF: {DCF}")
-    print(f"minDCF: {Util.compute_minDCF(LTE, rbfSVM.get_scores(), workPoint)[0]}")
-
     # Plot an overall Bayes error plot
     PCA_value = 7
     Plots.new_figure()
