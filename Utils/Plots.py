@@ -178,3 +178,7 @@ def show_plot():
 
 def new_figure():
     return plt.figure()
+
+
+def plot_vertical_line(x):
+    plt.axvline(x)

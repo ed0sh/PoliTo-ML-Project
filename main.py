@@ -365,3 +365,31 @@ if __name__ == '__main__':
     _, DCF = Util.evaluate(predicted, kf_shuffled_labels_rbfSVM, workPoint)
     print(f"PCA - KF calibrated scores - RBF SVM DCF: {DCF}")
     print(f"PCA - KF calibrated scores - RBF SVM minDCF: {Util.compute_minDCF(kf_shuffled_labels_rbfSVM, kf_calibrated_scores_rbfSVM, workPoint)[0]}")
+
+    # --- Fusion ---
+
+    gmmClassifier = GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
+    polySVM = KernelSVM(DTR, LTR, d=2, c=10, C=1e-2, K=10, kernel_type="poly")
+    rbfSVM = KernelSVM(DTR, LTR, gamma=numpy.exp(-5), K=0.01, C=0.1, kernel_type="rbf")
+
+    print("Fusion: GMM - Poly")
+    Util.evaluate_model_fusion(DTR, LTR, PCA_value, K, gmmClassifier, polySVM, None, scaled_workPoint)
+
+    print("Fusion: GMM - RBF")
+    Util.evaluate_model_fusion(DTR, LTR, PCA_value, K, gmmClassifier, rbfSVM, None, scaled_workPoint)
+
+    print("Fusion: RBF - Poly")
+    Util.evaluate_model_fusion(DTR, LTR, PCA_value, K, rbfSVM, polySVM, None, scaled_workPoint)
+
+    print("Fusion: GMM - Poly - RBF")
+    Util.evaluate_model_fusion(DTR, LTR, PCA_value, K, gmmClassifier, polySVM, rbfSVM, scaled_workPoint)
+
+    # Bayes error plot comparing the fusion model and those that compose it
+    Plots.new_figure()
+    _, _, _ = Util.score_calibration_k_folds(DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, "blue")
+    _, _, _ = Util.score_calibration_k_folds(DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, "red")
+    Util.evaluate_model_fusion(DTR, LTR, PCA_value, K, gmmClassifier, polySVM, None, scaled_workPoint)
+
+    # Vertical line indicating the working point
+    Plots.plot_vertical_line(numpy.log(scaled_workPoint.pi / (1 - scaled_workPoint.pi)))
+    Plots.show_plot()

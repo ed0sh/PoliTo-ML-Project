@@ -512,8 +512,9 @@ def score_calibration_k_folds(DTR, LTR, PCA_value, K, modelObject, scaled_workPo
     return score_calibration(scores, labels, K, modelObject, scaled_workPoint, color)
 
 
-def score_calibration(scores, labels, K, modelObject, scaled_workPoint, color):
-    scores = vrow(scores)
+def score_calibration(scores: numpy.array, labels, K, modelObject, scaled_workPoint, color):
+    if len(scores.shape) == 1:
+        scores = vrow(scores)
 
     # Shuffle the scores
     numpy.random.seed(4131)
@@ -540,7 +541,8 @@ def score_calibration(scores, labels, K, modelObject, scaled_workPoint, color):
     logReg.lam = selectedLambda
 
     _, _, _, (new_scores, calibrated_scores_labels), _ = k_folds(shuffled_scores, shuffled_labels, K, logReg, scaled_workPoint, seed=134)
-    bayes_error_calibration_evaluation(new_scores, calibrated_scores_labels, modelObject, color)
+    if modelObject is not None:
+        bayes_error_calibration_evaluation(new_scores, calibrated_scores_labels, modelObject, color)
 
     calibration_model = Classifiers.LogisticRegression.LogRegClass(shuffled_scores, shuffled_labels, selectedLambda, logReg.prior)
     calibration_model.train()
@@ -646,3 +648,49 @@ def get_sigma_type_as_string(diagonal: bool, tied: bool):
         return "Tied"
     else:
         return "Full"
+
+
+def evaluate_model_fusion(
+        DTR: numpy.array, LTR: numpy.array,
+        PCA_value: int, K: int,
+        modelObject1: ClassifiersInterface,
+        modelObject2: ClassifiersInterface,
+        modelObject3: ClassifiersInterface,
+        scaled_workPoint: WorkPoint):
+    print("PCA\t|\tminDCF\t|\tDCF")
+
+    if PCA_value is not None:
+        reduced_DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+    else:
+        reduced_DTR = DTR.copy()
+        PCA_value = "No"
+
+    modelObject1.update_dataset(reduced_DTR, LTR)
+    modelObject2.update_dataset(reduced_DTR, LTR)
+    if modelObject3 is not None:
+        modelObject3.update_dataset(reduced_DTR, LTR)
+
+    _, _, _, (scores1, labels1), _ = k_folds(reduced_DTR, LTR, K, modelObject1, scaled_workPoint, seed=564)
+    _, _, _, (scores2, labels2), _ = k_folds(reduced_DTR, LTR, K, modelObject2, scaled_workPoint, seed=564)
+
+    if modelObject3 is not None:
+        _, _, _, (scores3, labels3), _ = k_folds(reduced_DTR, LTR, K, modelObject3, scaled_workPoint, seed=564)
+        scores = numpy.vstack([scores1, scores2, scores3])
+    else:
+        scores = numpy.vstack([scores1, scores2])
+
+    _, new_scores, calibrated_scores_labels = score_calibration(scores, labels1, K, "Fusion", scaled_workPoint, "orange")
+
+    t = - numpy.log(scaled_workPoint.pi / (1 - scaled_workPoint.pi))
+
+    # Fusion model calibrated DCF and minDCF
+    predicted = (new_scores > t).astype(int)
+    _, DCF = evaluate(predicted, calibrated_scores_labels, scaled_workPoint)
+    minDCF = compute_minDCF(calibrated_scores_labels, new_scores, scaled_workPoint)[0]
+
+    minDCF = round(minDCF, 3)
+    DCF = round(DCF, 3)
+
+    print(f"{PCA_value}\t|\t{minDCF}\t|\t{DCF}")
+
+    return minDCF, DCF
