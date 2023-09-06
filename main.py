@@ -349,8 +349,9 @@ if __name__ == '__main__':
     Util.bayes_error_calibration_evaluation_k_folds(rbfSVM.DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, "green")
     Plots.show_plot()
 
+    # Plot DET graph
     fig = Plots.new_figure()
     Util.DET_plot(DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, fig, "blue")
-    Util.DET_plot(polySVM.DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, fig, "red")
-    Util.DET_plot(rbfSVM.DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, fig, "green")
+    Util.DET_plot(DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, fig, "red")
+    Util.DET_plot(DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, fig, "green")
     Plots.show_plot()
