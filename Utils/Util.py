@@ -650,13 +650,12 @@ def get_sigma_type_as_string(diagonal: bool, tied: bool):
         return "Full"
 
 
-def evaluate_model_fusion(
-        DTR: numpy.array, LTR: numpy.array,
-        PCA_value: int, K: int,
-        modelObject1: ClassifiersInterface,
-        modelObject2: ClassifiersInterface,
-        modelObject3: ClassifiersInterface,
-        scaled_workPoint: WorkPoint):
+def evaluate_model_fusion(DTR: numpy.array, LTR: numpy.array,
+                          PCA_value: int, K: int,
+                          modelObject1: ClassifiersInterface,
+                          modelObject2: ClassifiersInterface,
+                          modelObject3: ClassifiersInterface,
+                          scaled_workPoint: WorkPoint):
     print("PCA\t|\tminDCF\t|\tDCF")
 
     if PCA_value is not None:
@@ -679,7 +678,8 @@ def evaluate_model_fusion(
     else:
         scores = numpy.vstack([scores1, scores2])
 
-    _, new_scores, calibrated_scores_labels = score_calibration(scores, labels1, K, "Fusion", scaled_workPoint, "orange")
+    _, new_scores, calibrated_scores_labels = score_calibration(scores, labels1, K, "Fusion", scaled_workPoint,
+                                                                "orange")
 
     t = - numpy.log(scaled_workPoint.pi / (1 - scaled_workPoint.pi))
 
@@ -694,3 +694,45 @@ def evaluate_model_fusion(
     print(f"{PCA_value}\t|\t{minDCF}\t|\t{DCF}")
 
     return minDCF, DCF
+
+
+def DET_plot_fusion(DTR: numpy.array, LTR: numpy.array,
+                    PCA_value: int, K: int,
+                    modelObject1: ClassifiersInterface,
+                    modelObject2: ClassifiersInterface,
+                    modelObject3: ClassifiersInterface,
+                    scaled_workPoint: WorkPoint,
+                    fig, color):
+
+    if PCA_value is not None:
+        reduced_DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+    else:
+        reduced_DTR = DTR.copy()
+        PCA_value = "No"
+
+    modelObject1.update_dataset(reduced_DTR, LTR)
+    modelObject2.update_dataset(reduced_DTR, LTR)
+    if modelObject3 is not None:
+        modelObject3.update_dataset(reduced_DTR, LTR)
+
+    _, _, _, (scores1, labels1), _ = k_folds(reduced_DTR, LTR, K, modelObject1, scaled_workPoint, seed=564)
+    _, _, _, (scores2, labels2), _ = k_folds(reduced_DTR, LTR, K, modelObject2, scaled_workPoint, seed=564)
+
+    if modelObject3 is not None:
+        _, _, _, (scores3, labels3), _ = k_folds(reduced_DTR, LTR, K, modelObject3, scaled_workPoint, seed=564)
+        scores = numpy.vstack([scores1, scores2, scores3])
+    else:
+        scores = numpy.vstack([scores1, scores2])
+
+    _, new_scores, calibrated_scores_labels = score_calibration(scores, labels1, K, None, scaled_workPoint,None)
+    _, FNRs, FPRs = compute_minDCF(calibrated_scores_labels, new_scores, scaled_workPoint)
+
+    Plots.plot_simple_plot_no_show(fig, FPRs, FNRs,
+                                   "False Positive Ratio",
+                                   "False Negative Ratio",
+                                   color,
+                                   "Fusion",
+                                   "DET Plot",
+                                   "log",
+                                   "log"
+                                   )

@@ -393,3 +393,12 @@ if __name__ == '__main__':
     # Vertical line indicating the working point
     Plots.plot_vertical_line(numpy.log(scaled_workPoint.pi / (1 - scaled_workPoint.pi)))
     Plots.show_plot()
+
+    # Plot DET graph with the fusion
+    fig = Plots.new_figure()
+    Util.DET_plot(DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, fig, "blue")
+    Util.DET_plot(DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, fig, "red")
+    Util.DET_plot(DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, fig, "green")
+    Util.DET_plot_fusion(DTR, LTR, PCA_value, K, gmmClassifier, polySVM, None, scaled_workPoint, fig, "orange")
+    Plots.show_plot()
+    
