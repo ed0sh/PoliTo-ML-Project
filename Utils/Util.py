@@ -505,6 +505,8 @@ def bayes_error_calibration_evaluation(scores, labels, modelObject, color):
 def score_calibration_k_folds(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, color):
     if PCA_value is not None:
         DTR = Preproccessing.PCA(DTR, PCA_value)[0]
+
+    # Collect the pooled scores and their relative labels from k_folds
     _, _, _, (scores, labels), _ = k_folds(DTR, LTR, K, modelObject, scaled_workPoint)
 
     return score_calibration(scores, labels, K, modelObject, scaled_workPoint, color)
@@ -530,18 +532,20 @@ def score_calibration(scores, labels, K, modelObject, scaled_workPoint, color):
 
     for lam in lambdas:
         logRegObj = Classifiers.LogisticRegression.LogRegClass(shuffled_scores, shuffled_labels, lam, logReg.prior)
-        _, DCF, minDCF, _, _ = k_folds(shuffled_scores, shuffled_labels, 5, logRegObj, scaled_workPoint)
+        _, DCF, minDCF, _, _ = k_folds(shuffled_scores, shuffled_labels, K, logRegObj, scaled_workPoint)
 
         if (DCF - minDCF) < bestMinDCF:
             selectedLambda = lam
             bestMinDCF = (DCF - minDCF)
     logReg.lam = selectedLambda
-    
-    _, _, _, (new_scores, calibrated_scores_labels), _ = k_folds(scores, labels, K, logReg, scaled_workPoint, seed=134)
 
+    _, _, _, (new_scores, calibrated_scores_labels), _ = k_folds(shuffled_scores, shuffled_labels, K, logReg, scaled_workPoint, seed=134)
     bayes_error_calibration_evaluation(new_scores, calibrated_scores_labels, modelObject, color)
 
-    return new_scores, calibrated_scores_labels
+    calibration_model = Classifiers.LogisticRegression.LogRegClass(shuffled_scores, shuffled_labels, selectedLambda, logReg.prior)
+    calibration_model.train()
+
+    return calibration_model, new_scores, calibrated_scores_labels
 
 
 def DET_plot(DTR, LTR, PCA_value, K, modelObject, scaled_workPoint, fig, color):
