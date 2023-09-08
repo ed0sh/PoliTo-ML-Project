@@ -336,13 +336,13 @@ if __name__ == '__main__':
 
     # Get calibration models and plot calibrated Bayes error graph
     Plots.new_figure()
-    gmm_calibration_model, kf_calibrated_scores_gmm, kf_shuffled_labels_gmm = Util.score_calibration_k_folds(
+    _, kf_calibrated_scores_gmm, kf_shuffled_labels_gmm = Util.score_calibration_k_folds(
         DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, "blue")
 
-    polySVM_calibration_model, kf_calibrated_scores_polySVM, kf_shuffled_labels_polySVM = Util.score_calibration_k_folds(
+    _, kf_calibrated_scores_polySVM, kf_shuffled_labels_polySVM = Util.score_calibration_k_folds(
         DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, "red")
 
-    rbfSVM_calibration_model, kf_calibrated_scores_rbfSVM, kf_shuffled_labels_rbfSVM = Util.score_calibration_k_folds(
+    _, kf_calibrated_scores_rbfSVM, kf_shuffled_labels_rbfSVM = Util.score_calibration_k_folds(
         DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, "green")
     Plots.show_plot()
 
@@ -384,10 +384,11 @@ if __name__ == '__main__':
     print("Fusion: GMM - Poly - RBF")
     Util.evaluate_model_fusion(DTR, LTR, PCA_value, K, gmmClassifier, polySVM, rbfSVM, scaled_workPoint)
 
-    # Bayes error plot comparing the fusion model and those that compose it
+    # Bayes error plot comparing the fusion model with the ones we chose
     Plots.new_figure()
     _, _, _ = Util.score_calibration_k_folds(DTR, LTR, PCA_value, K, gmmClassifier, scaled_workPoint, "blue")
     _, _, _ = Util.score_calibration_k_folds(DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, "red")
+    _, _, _ = Util.score_calibration_k_folds(DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, "green")
     Util.evaluate_model_fusion(DTR, LTR, PCA_value, K, gmmClassifier, polySVM, None, scaled_workPoint)
 
     # Vertical line indicating the working point
@@ -400,5 +401,90 @@ if __name__ == '__main__':
     Util.DET_plot(DTR, LTR, PCA_value, K, polySVM, scaled_workPoint, fig, "red")
     Util.DET_plot(DTR, LTR, PCA_value, K, rbfSVM, scaled_workPoint, fig, "green")
     Util.DET_plot_fusion(DTR, LTR, PCA_value, K, gmmClassifier, polySVM, None, scaled_workPoint, fig, "orange")
+    Plots.show_plot()
+
+    # --- Final evaluation ---
+
+    PCAed_DTR, _, P = Preproccessing.PCA(DTR, PCA_value)
+    PCAed_DTE = numpy.dot(P.T, DTE)
+
+    # GMM
+    gmmClassifier = GMMClassifier(PCAed_DTR, LTR, params_gmm_target, params_gmm_non_target)
+    gmmClassifier.train()
+    gmmClassifier.classify(PCAed_DTE, scaled_workPoint)
+    gmm_scores = Util.vrow(gmmClassifier.get_scores())
+
+    gmm_calibration_model, _, _ = Util.score_calibration(gmm_scores, LTE, K, None, scaled_workPoint, "blue")
+    gmm_calibration_model.classify(gmm_scores, scaled_workPoint)
+    calibrated_scores_gmm = gmm_calibration_model.get_scores()
+
+    predicted = (calibrated_scores_gmm > t).astype(int)
+    err_rate, DCF = Util.evaluate(predicted, LTE, workPoint)
+    minDCF, gmm_FNRs, gmm_FPRs = Util.compute_minDCF(LTE, calibrated_scores_gmm, workPoint)
+    print(f"Calibrated - PCA - GMM DCF: {DCF}")
+    print(f"Calibrated - PCA - GMM minDCF: {minDCF}")
+
+    # Poly
+    polySVM = KernelSVM(PCAed_DTR, LTR, d=2, c=10, C=1e-2, K=10, kernel_type="poly")
+    polySVM.train()
+    polySVM.classify(PCAed_DTE, scaled_workPoint)
+    polySVM_scores = Util.vrow(polySVM.get_scores())
+
+    polySVM_calibration_model, _, _ = Util.score_calibration(polySVM_scores, LTE, K, None, scaled_workPoint, "blue")
+    polySVM_calibration_model.classify(polySVM_scores, scaled_workPoint)
+    calibrated_scores_polySVM = polySVM_calibration_model.get_scores()
+
+    predicted = (calibrated_scores_polySVM > t).astype(int)
+    _, DCF = Util.evaluate(predicted, LTE, workPoint)
+    minDCF, polySVM_FNRs, polySVM_FPRs = Util.compute_minDCF(LTE, calibrated_scores_polySVM, workPoint)
+    print(f"Calibrated - PCA - polySVM DCF: {DCF}")
+    print(f"Calibrated - PCA - polySVM minDCF: {minDCF}")
+
+    # RBF
+    rbfSVM = KernelSVM(PCAed_DTR, LTR, gamma=numpy.exp(-5), K=0.01, C=0.1, kernel_type="rbf")
+    rbfSVM.train()
+    rbfSVM.classify(PCAed_DTE, scaled_workPoint)
+    rbfSVM_scores = Util.vrow(rbfSVM.get_scores())
+
+    rbfSVM_calibration_model, _, _ = Util.score_calibration(rbfSVM_scores, LTE, K, None, scaled_workPoint, "blue")
+    rbfSVM_calibration_model.classify(rbfSVM_scores, scaled_workPoint)
+    calibrated_scores_rbfSVM = rbfSVM_calibration_model.get_scores()
+
+    predicted = (calibrated_scores_rbfSVM > t).astype(int)
+    _, DCF = Util.evaluate(predicted, LTE, workPoint)
+    minDCF, rbfSVM_FNRs, rbfSVM_FPRs = Util.compute_minDCF(LTE, calibrated_scores_rbfSVM, workPoint)
+    print(f"Calibrated - PCA - rbfSVM DCF: {DCF}")
+    print(f"Calibrated - PCA - rbfSVM minDCF: {minDCF}")
+
+    # Fusion
+    scores = numpy.vstack([gmm_scores, polySVM_scores])
+    _, calibrated_scores_fusion, calibrated_scores_labels = Util.score_calibration(scores, LTE, K, "Fusion",
+                                                                                   scaled_workPoint,
+                                                                                   "orange")
+    predicted = (calibrated_scores_fusion > t).astype(int)
+    _, DCF = Util.evaluate(predicted, calibrated_scores_labels, workPoint)
+    minDCF, fusion_FNRs, fusion_FPRs = Util.compute_minDCF(calibrated_scores_labels, calibrated_scores_fusion,
+                                                           workPoint)
+    print(f"Calibrated - PCA - Fusion DCF: {DCF}")
+    print(f"Calibrated - PCA - Fusion minDCF: {minDCF}")
+
+    # Bayes error plot comparing the fusion model and those that compose it
+    Plots.new_figure()
+    Util.bayes_error_calibration_evaluation(calibrated_scores_gmm, LTE, gmmClassifier, "blue")
+    Util.bayes_error_calibration_evaluation(calibrated_scores_polySVM, LTE, polySVM, "red")
+    Util.bayes_error_calibration_evaluation(calibrated_scores_rbfSVM, LTE, rbfSVM, "green")
+    Util.bayes_error_calibration_evaluation(calibrated_scores_fusion, calibrated_scores_labels, "Fusion", "orange")
+    Plots.plot_vertical_line(numpy.log(scaled_workPoint.pi / (1 - scaled_workPoint.pi)))
+    Plots.show_plot()
+
+    fig = Plots.new_figure()
+    Plots.plot_simple_plot_no_show(fig, gmm_FPRs, gmm_FNRs, "False Positive Ratio", "False Negative Ratio",
+                                   "blue", gmmClassifier.__str__(), "DET Plot", "log", "log")
+    Plots.plot_simple_plot_no_show(fig, polySVM_FPRs, polySVM_FNRs, "False Positive Ratio", "False Negative Ratio",
+                                   "red", polySVM.__str__(), "DET Plot", "log", "log")
+    Plots.plot_simple_plot_no_show(fig, rbfSVM_FPRs, rbfSVM_FNRs, "False Positive Ratio", "False Negative Ratio",
+                                   "green", rbfSVM.__str__(), "DET Plot", "log", "log")
+    Plots.plot_simple_plot_no_show(fig, fusion_FPRs, fusion_FNRs, "False Positive Ratio", "False Negative Ratio",
+                                   "orange", "Fusion", "DET Plot", "log", "log")
     Plots.show_plot()
     
