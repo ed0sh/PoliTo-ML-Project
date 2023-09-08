@@ -11,7 +11,7 @@ def PCA(D: numpy.array, m: int):
 
     expl_variance_fraction = Sigma[0:m].sum() / Sigma.sum()
 
-    return numpy.dot(P.T, D), expl_variance_fraction
+    return numpy.dot(P.T, D), expl_variance_fraction, P
 
 
 def LDA(D: numpy.array, L: numpy.array, m: int):
