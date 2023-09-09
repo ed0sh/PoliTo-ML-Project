@@ -578,6 +578,7 @@ def svm_cross_val_graphs(
         svm_type_label: str,
         kernel_type: str = None,
         c=0.0, d=2, gamma=1):
+
     fig = Plots.new_figure()
     for ki, K_svm in enumerate(K_svm_vec):
         C_results = []
@@ -736,3 +737,105 @@ def DET_plot_fusion(DTR: numpy.array, LTR: numpy.array,
                                    "log",
                                    "log"
                                    )
+
+
+def svm_hyperparam_eval_graphs(
+        K_svm_vec: numpy.array,
+        C_vec: numpy.array,
+        DTR: numpy.array,
+        LTR: numpy.array,
+        DTE: numpy.array,
+        LTE: numpy.array,
+        PCA_values: list,
+        scaled_workPoint: WorkPoint,
+        rebalanced: bool,
+        colors: list,
+        svm_type_label: str,
+        kernel_type: str = None,
+        c=0.0, d=2, gamma=1):
+
+    fig = Plots.new_figure()
+    for ki, K_svm in enumerate(K_svm_vec):
+        C_results = []
+        for C in C_vec:
+            print(f"K: {K_svm}, C: {C}")
+
+            if kernel_type == "poly" or kernel_type == "rbf":
+                modelSVM = Classifiers.KernelSVM.KernelSVM(DTR, LTR, C, K_svm, kernel_type=kernel_type, d=d, c=c,
+                                                           gamma=gamma)
+            else:
+                modelSVM = Classifiers.LinearSVM.LinearSVM(DTR, LTR, C, K_svm)
+
+            minDCF_values = []
+
+            for PCA_value in PCA_values:
+                PCAed_DTR, _, P = Preproccessing.PCA(DTR, PCA_value)
+                PCAed_DTE = numpy.dot(P.T, DTE)
+
+                modelSVM.update_dataset(PCAed_DTR, LTR)
+
+                if rebalanced:
+                    modelSVM.rebalance(scaled_workPoint)
+
+                modelSVM.train()
+                modelSVM.classify(PCAed_DTE, scaled_workPoint)
+                modelSVM_scores = vrow(modelSVM.get_scores())
+
+                minDCF = compute_minDCF(LTE, modelSVM_scores, scaled_workPoint)[0]
+                print(f"\tminDCF: {minDCF}")
+                minDCF_values.append(minDCF)
+
+            C_results.append(minDCF_values)
+
+        print(f"K: {K_svm}")
+        print(C_results)
+        for i, m in enumerate(PCA_values):
+            Plots.plot_simple_plot_no_show(
+                fig,
+                C_vec,
+                numpy.array(C_results)[:, i],
+                x_label="C",
+                y_label=f"minDCF",
+                color=colors[(ki * len(PCA_values)) + i],
+                label=f"PCA={m} - K={K_svm}",
+                title=f"{svm_type_label}",
+                x_scale="log",
+                y_scale="linear"
+            )
+    Plots.show_plot()
+
+
+def gmm_hyperparam_eval_one_prop(DTR: numpy.array, LTR: numpy.array, DTE: numpy.array, LTE: numpy.array,
+                             prop_c0_vec: numpy.array, prop_c1_vec: numpy.array,
+                             prop_name: str,
+                             params_gmm_target: dict,
+                             params_gmm_non_target: dict,
+                             PCA_values: list,
+                             scaled_workPoint: WorkPoint):
+    prop_minDCFs = {}
+    for prop_c0 in prop_c0_vec:
+        params_gmm_non_target[prop_name] = prop_c0
+
+        prop_c1_minDCFs = []
+        for prop_c1 in prop_c1_vec:
+            print(f"{prop_name}_c0 = {prop_c0}, {prop_name}_c1 = {prop_c1}")
+            params_gmm_target[prop_name] = prop_c1
+
+            gmm_classifier = Classifiers.GMMClassifier.GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
+
+            for PCA_value in PCA_values:
+                PCAed_DTR, _, P = Preproccessing.PCA(DTR, PCA_value)
+                PCAed_DTE = numpy.dot(P.T, DTE)
+
+                gmm_classifier.update_dataset(PCAed_DTR, LTR)
+                gmm_classifier.train()
+                gmm_classifier.classify(PCAed_DTE, scaled_workPoint)
+                modelSVM_scores = vrow(gmm_classifier.get_scores())
+
+                minDCF = round(compute_minDCF(LTE, modelSVM_scores, scaled_workPoint)[0], 3)
+                print(f"\tminDCF: {minDCF}")
+                prop_c1_minDCFs.append(minDCF)
+
+        prop_minDCFs[prop_c0] = prop_c1_minDCFs
+
+    return prop_minDCFs

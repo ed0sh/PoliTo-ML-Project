@@ -487,4 +487,233 @@ if __name__ == '__main__':
     Plots.plot_simple_plot_no_show(fig, fusion_FPRs, fusion_FNRs, "False Positive Ratio", "False Negative Ratio",
                                    "orange", "Fusion", "DET Plot", "log", "log")
     Plots.show_plot()
-    
+
+    # --- Post choice evaluation ---
+
+    # Polynomial d = 2 kernel SVM
+    K_svm_vec = [1, 1e1]
+    colors = ['red', 'orange', 'blue', 'green']
+    PCA_values_reduced = [None, 7]
+
+    C_vec = [1e-3, 1e-2, 1e-1, 1, 1e1]
+    for c in [0, 1, 10]:
+        print(f"----- SVM poly 2 - c = {c} -----")
+        Util.svm_hyperparam_eval_graphs(K_svm_vec, C_vec, DTR, LTR, DTE, LTE, PCA_values_reduced, scaled_workPoint, False,
+                                        colors, svm_type_label=f"SVM poly 2 - c={c}", kernel_type="poly", d=2, c=c)
+
+    # RBF kernel SVM
+    C_vec = [1e-3, 2e-3, 1e-2, 2e-2, 1e-1, 2e-1, 1, 2, 1e1, 1e2]
+    K_svm_vec = [1e-3, 1e-2, 0.05, 0.1]
+    colors = ['red', 'orange', 'blue', 'green', 'black', 'yellow', 'grey', 'purple']
+
+    log_gamma_values = [-3, -4, -5, -6]
+    for log_gamma in log_gamma_values:
+        print(f"----- SVM RBF - log ɣ={log_gamma} -----")
+        Util.svm_hyperparam_eval_graphs(K_svm_vec, C_vec, DTR, LTR, DTE, LTE, PCA_values_reduced, scaled_workPoint,
+                                        False,
+                                        colors, svm_type_label=f"SVM RBF - log ɣ={log_gamma}", kernel_type="rbf",
+                                        gamma=numpy.exp(log_gamma))
+
+    # GMMs
+
+    # Find the best g configuration without PCA
+    params_gmm_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 1,
+        "diagonal": False,
+        "tied": False
+    }
+
+    params_gmm_non_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 1,
+        "diagonal": False,
+        "tied": False
+    }
+
+    max_g_c0_vec = [1, 2, 4, 8, 16, 32]
+    # For visualization purposes, split max_g_c1_vec in 2 and run with max_g_c1_vec containing only 3 values at a time
+    max_g_c1_vec = [1, 2, 4]
+    PCA_values = [None]
+    sigma_type_t = Util.get_sigma_type_as_string(params_gmm_target["diagonal"], params_gmm_target["tied"])
+    sigma_type_nt = Util.get_sigma_type_as_string(params_gmm_non_target["diagonal"], params_gmm_non_target["tied"])
+
+    print(f"----- GMM - target 'g' components: {max_g_c1_vec} -----")
+    max_g_minDCFs = Util.gmm_hyperparam_eval_one_prop(DTR, LTR, DTE, LTE,
+                                                      max_g_c0_vec, max_g_c1_vec,
+                                                      "max_g",
+                                                      params_gmm_target,
+                                                      params_gmm_non_target,
+                                                      PCA_values,
+                                                      scaled_workPoint)
+
+    Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, 'Target class "g" components',
+                                 "max_g", f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
+                                 PCA_values[0])
+
+    max_g_c1_vec = [8, 16, 32]
+    print(f"----- GMM - target 'g' components: {max_g_c1_vec} -----")
+    max_g_minDCFs = Util.gmm_hyperparam_eval_one_prop(DTR, LTR, DTE, LTE,
+                                                      max_g_c0_vec, max_g_c1_vec,
+                                                      "max_g",
+                                                      params_gmm_target,
+                                                      params_gmm_non_target,
+                                                      PCA_values,
+                                                      scaled_workPoint)
+
+    Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, 'Target class "g" components',
+                                 "max_g", f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
+                                 PCA_values[0])
+
+    # Best number of components "max_g"
+    params_gmm_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 1,
+        "diagonal": False,
+        "tied": False
+    }
+
+    params_gmm_non_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 4,
+        "diagonal": False,
+        "tied": False
+    }
+
+    # Evaluate dimensionality reduction
+    print("----- GMM classifier -----")
+    PCA_values = [None, 10, 9, 8, 7, 6, 5]
+    gmmClassifier = GMMClassifier(DTR, LTR, params_gmm_target, params_gmm_non_target)
+    for PCA_value in PCA_values:
+        PCAed_DTR, _, P = Preproccessing.PCA(DTR, PCA_value)
+        PCAed_DTE = numpy.dot(P.T, DTE)
+
+        gmmClassifier.update_dataset(PCAed_DTR, LTR)
+        gmmClassifier.train()
+        gmmClassifier.classify(PCAed_DTE, scaled_workPoint)
+        modelSVM_scores = Util.vrow(gmmClassifier.get_scores())
+
+        minDCF = Util.compute_minDCF(LTE, modelSVM_scores, scaled_workPoint)[0]
+        print(f"PCA: {PCA_value} -> minDCF: {minDCF}")
+
+    # Find all the best configuration using the best PCA value
+    combinations_t = [(False, False), (False, True), (True, False), (True, True)]
+    combinations_nt = [(False, False), (False, True), (True, False), (True, True)]
+    PCA_values = [7]
+
+    for sigma_type_comb_t in combinations_t:
+        for sigma_type_comb_nt in combinations_nt:
+            params_gmm_target = {
+                "alpha": 1e-1,
+                "psi": 1e-2,
+                "max_g": 1,
+                "diagonal": sigma_type_comb_t[1],
+                "tied": sigma_type_comb_t[0]
+            }
+
+            params_gmm_non_target = {
+                "alpha": 1e-1,
+                "psi": 1e-2,
+                "max_g": 1,
+                "diagonal": sigma_type_comb_nt[1],
+                "tied": sigma_type_comb_nt[0]
+            }
+
+            sigma_type_t = Util.get_sigma_type_as_string(params_gmm_target["diagonal"], params_gmm_target["tied"])
+            sigma_type_nt = Util.get_sigma_type_as_string(params_gmm_non_target["diagonal"],
+                                                          params_gmm_non_target["tied"])
+
+            max_g_c1_vec = [1, 2, 4]
+            print(f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}")
+            print(f"----- GMM - target 'g' components: {max_g_c1_vec} -----")
+            max_g_minDCFs = Util.gmm_hyperparam_eval_one_prop(DTR, LTR, DTE, LTE,
+                                                              max_g_c0_vec, max_g_c1_vec,
+                                                              "max_g",
+                                                              params_gmm_target,
+                                                              params_gmm_non_target,
+                                                              PCA_values,
+                                                              scaled_workPoint)
+
+            Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, 'Target class "g" components',
+                                         "max_g", f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
+                                         PCA_values[0])
+
+            max_g_c1_vec = [8, 16, 32]
+            print(f"----- GMM - target 'g' components: {max_g_c1_vec} -----")
+            max_g_minDCFs = Util.gmm_hyperparam_eval_one_prop(DTR, LTR, DTE, LTE,
+                                                              max_g_c0_vec, max_g_c1_vec,
+                                                              "max_g",
+                                                              params_gmm_target,
+                                                              params_gmm_non_target,
+                                                              PCA_values,
+                                                              scaled_workPoint)
+
+            Plots.plot_gmm_g_grid_search(max_g_minDCFs, max_g_c1_vec, 'Target class "g" components',
+                                         "max_g", f"Non-target: {sigma_type_nt} - Target: {sigma_type_t}",
+                                         PCA_values[0])
+
+    # Evaluate the fusion with the optimal model configurations
+    params_gmm_target = {
+        "alpha": 1e-1,
+        "psi": 1e-2,
+        "max_g": 2,
+        "diagonal": False,
+        "tied": True
+    }
+
+    params_gmm_non_target = {
+        "alpha": 1e-4,
+        "psi": 1e-2,
+        "max_g": 32,
+        "diagonal": True,
+        "tied": False
+    }
+    PCAed_DTR, _, P = Preproccessing.PCA(DTR, PCA_value)
+    PCAed_DTE = numpy.dot(P.T, DTE)
+
+    # GMM
+    gmmClassifier = GMMClassifier(PCAed_DTR, LTR, params_gmm_target, params_gmm_non_target)
+    gmmClassifier.train()
+    gmmClassifier.classify(PCAed_DTE, scaled_workPoint)
+    gmm_scores = Util.vrow(gmmClassifier.get_scores())
+
+    gmm_calibration_model, _, _ = Util.score_calibration(gmm_scores, LTE, K, None, scaled_workPoint, "blue")
+    gmm_calibration_model.classify(gmm_scores, scaled_workPoint)
+    calibrated_scores_gmm = gmm_calibration_model.get_scores()
+
+    predicted = (calibrated_scores_gmm > t).astype(int)
+    err_rate, DCF = Util.evaluate(predicted, LTE, workPoint)
+    minDCF, gmm_FNRs, gmm_FPRs = Util.compute_minDCF(LTE, calibrated_scores_gmm, workPoint)
+    print(f"Calibrated - PCA - GMM DCF: {DCF}")
+    print(f"Calibrated - PCA - GMM minDCF: {minDCF}")
+
+    # Poly
+    polySVM = KernelSVM(PCAed_DTR, LTR, d=2, c=10, C=1e-2, K=10, kernel_type="poly")
+    polySVM.train()
+    polySVM.classify(PCAed_DTE, scaled_workPoint)
+    polySVM_scores = Util.vrow(polySVM.get_scores())
+
+    polySVM_calibration_model, _, _ = Util.score_calibration(polySVM_scores, LTE, K, None, scaled_workPoint, "blue")
+    polySVM_calibration_model.classify(polySVM_scores, scaled_workPoint)
+    calibrated_scores_polySVM = polySVM_calibration_model.get_scores()
+
+    predicted = (calibrated_scores_polySVM > t).astype(int)
+    _, DCF = Util.evaluate(predicted, LTE, workPoint)
+    minDCF, polySVM_FNRs, polySVM_FPRs = Util.compute_minDCF(LTE, calibrated_scores_polySVM, workPoint)
+    print(f"Calibrated - PCA - polySVM DCF: {DCF}")
+    print(f"Calibrated - PCA - polySVM minDCF: {minDCF}")
+
+    scores = numpy.vstack([gmm_scores, polySVM_scores])
+    _, calibrated_scores_fusion, calibrated_scores_labels = Util.score_calibration(scores, LTE, K, "Fusion",
+                                                                                   scaled_workPoint,
+                                                                                   "orange")
+    predicted = (calibrated_scores_fusion > t).astype(int)
+    _, DCF = Util.evaluate(predicted, calibrated_scores_labels, workPoint)
+    minDCF, fusion_FNRs, fusion_FPRs = Util.compute_minDCF(calibrated_scores_labels, calibrated_scores_fusion,
+                                                           workPoint)
+    print(f"Calibrated - PCA - Fusion DCF: {DCF}")
+    print(f"Calibrated - PCA - Fusion minDCF: {minDCF}")
